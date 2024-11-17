@@ -1,0 +1,172 @@
+/* General Styles for Login and Register Pages */
+body {
+    background: linear-gradient(145deg, #1db954, #191414); /* Fallback gradient */
+    background-size: 400% 400%;
+    animation: backgroundAnimation 8s infinite ease-in-out; /* Animation for gradient background */
+    color: #fff;
+    font-family: 'Helvetica', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    overflow: hidden; /* Hide overflow for smooth visuals */
+  }
+  
+  /* Animated Gradient */
+  @keyframes backgroundAnimation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  /* Box Container */
+  .login-container,
+  .register-container {
+    position: relative; /* Relative positioning to manage layering */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    z-index: 10; /* Bring the form to the front */
+  }
+  
+  .login-box,
+  .register-box {
+    background: rgba(0, 0, 0, 0.8); /* Semi-transparent black for contrast */
+    border-radius: 16px;
+    padding: 40px;
+    width: 350px;
+    text-align: center;
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px; /* Space between elements */
+    backdrop-filter: blur(5px); /* Frosted glass effect */
+    z-index: 11; /* Ensure the form content is in front of everything */
+  }
+  
+  h2 {
+    color: #fff;
+    font-size: 28px;
+    margin-bottom: 20px;
+    font-weight: bold;
+  }
+  
+  /* Input Fields */
+  .input-field {
+    width: 90%; /* Adjust width to fit inside the container */
+    padding: 14px;
+    margin: 5px 0;
+    border: 2px solid #1ed760;
+    border-radius: 25px;
+    background-color: #333;
+    color: #fff;
+    font-size: 16px;
+    transition: border-color 0.3s ease;
+  }
+  
+  .input-field:focus {
+    border-color: #1db954;
+    outline: none;
+  }
+  
+  /* Submit Button */
+  .submit-btn {
+    width: 90%;
+    padding: 15px;
+    background: #191414;
+    border: none;
+    color: #fff;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 25px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+  }
+  
+  .submit-btn:hover {
+    background: #1db954;
+    transform: translateY(-3px);
+  }
+  
+  .submit-btn:active {
+    transform: translateY(1px);
+  }
+  
+  ::placeholder {
+    color: #777;
+  }
+  
+  /* Subtle Animations */
+  @keyframes appear {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  .login-box,
+  .register-box {
+    animation: appear 0.5s ease-in-out;
+  }
+  
+  /* Pulsating Circles for Extra Music Vibes */
+  @keyframes pulse {
+    0% {
+      transform: scale(0.9);
+      opacity: 0.7;
+    }
+    50% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(0.9);
+      opacity: 0.7;
+    }
+  }
+  
+  .pulse-circle {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    background: rgba(29, 185, 84, 0.3);
+    border-radius: 50%;
+    animation: pulse 4s infinite ease-in-out;
+    z-index: 5; /* Behind the form */
+  }
+  
+  .pulse-circle:nth-child(1) {
+    top: 20%;
+    left: 20%;
+  }
+  
+  .pulse-circle:nth-child(2) {
+    top: 60%;
+    right: 20%;
+    animation-delay: 2s;
+  }
+  
+  .pulse-circle:nth-child(3) {
+    bottom: 10%;
+    left: 50%;
+    transform: translateX(-50%);
+    animation-delay: 4s;
+  }
+  .message {
+    margin: 10px 0;
+    font-size: 14px;
+    color: #1db954; /* Spotify green for success */
+    text-align: center;
+  }
+  
+  .message.error {
+    color: #ff4d4d; /* Red for errors */
+  }
+  
