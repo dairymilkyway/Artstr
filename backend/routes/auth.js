@@ -67,14 +67,20 @@ router.post('/login', async (req, res) => {
     const isMatch = await user.comparePassword(password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid username or password' });
 
-    // Generate JWT token
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    // Generate JWT token with userType
+    const token = jwt.sign(
+      { userId: user._id, userType: user.userType }, // Add userType to token payload
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
     res.json({ token });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+
 
 // Protected Dashboard Route
 router.get('/dashboard', authMiddleware, async (req, res) => {
@@ -86,5 +92,13 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+const adminMiddleware = (req, res, next) => {
+  if (req.userType !== 'admin') {
+    return res.status(403).json({ message: 'Access denied: Admins only' });
+  }
+  next();
+};
+
 
 module.exports = router;

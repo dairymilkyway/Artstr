@@ -3,7 +3,9 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const authRoutes = require('./routes/auth');
-
+const productRoutes= require('./routes/product');
+const multer = require('multer');
+const path = require('path');
 dotenv.config();
 
 const app = express();
@@ -16,6 +18,8 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
   .catch(err => console.log(err));
 
 // Routes
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/api/products', productRoutes);
 app.use('/api/auth', authRoutes);
 
 // Start server

@@ -1,19 +1,15 @@
 const jwt = require('jsonwebtoken');
 
-// Middleware to authenticate JWT tokens
 const authMiddleware = (req, res, next) => {
-  const token = req.header('Authorization'); // Token sent in the Authorization header
-
-  // Check if no token is provided
+  const token = req.header('Authorization');
   if (!token) {
     return res.status(401).json({ message: 'No token, authorization denied' });
   }
 
   try {
-    // Verify the token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded.userId; // Attach user ID from token payload to the request object
-    next(); // Proceed to the next middleware or route handler
+    req.user = decoded.userId; // Attach userId from token payload to request object
+    next();
   } catch (err) {
     res.status(401).json({ message: 'Token is not valid' });
   }
