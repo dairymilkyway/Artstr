@@ -1,0 +1,11 @@
+.product-list {
+  max-height: 500px; /* Set a fixed height for the scrollable area */
+  overflow-y: auto; /* Enable vertical scrolling */
+  padding: 10px;
+  display: grid; /* Optional: Use grid layout for better styling */
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  border: 1px solid #3e3735; /* Optional: Add a border for visual clarity */
+  border-radius: 8px;
+  background-color: #181413; /* Optional: Light background for the scrollable area */
+}
