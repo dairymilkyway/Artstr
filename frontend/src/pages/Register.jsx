@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import axios from 'axios';
+import { auth } from './firebaseConfig';
 import '../styles/logreg.css';
 
 const Register = () => {
@@ -22,11 +24,25 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/auth/register', formData);
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      const token = await userCredential.user.getIdToken();
+
+      // Send the token and user data to your backend
+      const response = await axios.post('http://localhost:5000/api/auth/register', {
+        token,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        username: formData.username,
+        password: formData.password, // Include password
+      });
+
+      // Store the JWT token in localStorage
+      localStorage.setItem('token', response.data.token);
+
       setMessage('Registration successful! Redirecting to login...');
-      setTimeout(() => navigate('/login'), 2000); // Redirect to login after 2 seconds
+      setTimeout(() => navigate('/login'), 2000);
     } catch (error) {
-      setMessage(error.response?.data?.message || 'Something went wrong!');
+      setMessage(error.message || 'Something went wrong!');
     }
   };
 

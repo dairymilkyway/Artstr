@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import axios from 'axios';
+import { auth } from './firebaseConfig';
 import '../styles/logreg.css';
 
 const Login = () => {
-  const [formData, setFormData] = useState({ username: '', password: '' });
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
 
@@ -16,11 +18,17 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', formData);
-      localStorage.setItem('token', response.data.token); // Store the token in localStorage
-      navigate('/dashboard'); // Redirect to the dashboard
+      const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      const token = await userCredential.user.getIdToken();
+
+      // Send the token to your backend
+      const response = await axios.post('http://localhost:5000/api/auth/login', { token });
+
+      // Store the backend token in localStorage
+      localStorage.setItem('token', response.data.token);
+      navigate('/dashboard');
     } catch (error) {
-      setMessage(error.response?.data?.message || 'Invalid username or password');
+      setMessage(error.message || 'Invalid email or password');
     }
   };
 
@@ -28,16 +36,14 @@ const Login = () => {
     <div className="login-container">
       <div className="pulse-circle"></div>
       <div className="pulse-circle"></div>
-      <div className="pulse-circle"></div>
-
       <div className="login-box">
         <h2>Login</h2>
         {message && <p className="message">{message}</p>}
         <form onSubmit={handleSubmit}>
           <input
-            type="text"
-            name="username"
-            placeholder="Username"
+            type="email"
+            name="email"
+            placeholder="Email"
             onChange={handleChange}
             className="input-field"
           />

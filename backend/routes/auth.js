@@ -1,12 +1,12 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const bcrypt = require('bcryptjs');
-
+const admin = require('../firebaseAdmin');
+const bcrypt = require('bcryptjs'); // Import bcrypt
 const router = express.Router();
 
 // Middleware to authenticate JWT tokens
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   const token = req.header('Authorization'); // Token sent in the Authorization header
 
   // Check if no token is provided
@@ -16,8 +16,8 @@ const authMiddleware = (req, res, next) => {
 
   try {
     // Verify the token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded.userId; // Attach user ID from token payload to the request object
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    req.user = decodedToken.uid; // Attach user ID from token payload to the request object
     next(); // Proceed to the next middleware or route handler
   } catch (err) {
     res.status(401).json({ message: 'Token is not valid' });
@@ -26,9 +26,13 @@ const authMiddleware = (req, res, next) => {
 
 // Register Route
 router.post('/register', async (req, res) => {
-  const { firstName, lastName, email, username, password } = req.body;
+  const { token, firstName, lastName, username, password } = req.body;
 
   try {
+    // Verify the Firebase ID token
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    const email = decodedToken.email;
+
     // Check if email or username already exists
     const existingEmail = await User.findOne({ email });
     if (existingEmail) return res.status(400).json({ message: 'Email already in use' });
@@ -36,51 +40,61 @@ router.post('/register', async (req, res) => {
     const existingUsername = await User.findOne({ username });
     if (existingUsername) return res.status(400).json({ message: 'Username already in use' });
 
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     // Create new user with default userType
     const newUser = new User({
       firstName,
       lastName,
       email,
       username,
-      password,
+      password: hashedPassword, // Save hashed password
       userType: 'user', // Default user type
     });
 
     await newUser.save();
-    res.status(201).json({ message: 'User created successfully' });
+
+    // Generate JWT token
+    const jwtToken = jwt.sign(
+      { userId: newUser._id, userType: newUser.userType },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.status(201).json({ message: 'User created successfully', token: jwtToken });
   } catch (error) {
-    console.error(error);
+    console.error('Error during registration:', error); // Add detailed logging
     res.status(500).json({ message: 'Server error' });
   }
 });
 
 // Login Route
 router.post('/login', async (req, res) => {
-  const { username, password } = req.body;
+  const { token } = req.body;
 
   try {
-    // Find user by username
-    const user = await User.findOne({ username });
-    if (!user) return res.status(400).json({ message: 'Invalid username or password' });
+    // Verify the Firebase ID token
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    const email = decodedToken.email;
 
-    // Check if password matches
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) return res.status(400).json({ message: 'Invalid username or password' });
+    // Find user by email
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: 'Invalid email or password' });
 
     // Generate JWT token with userType
-    const token = jwt.sign(
-      { userId: user._id, userType: user.userType }, // Add userType to token payload
+    const jwtToken = jwt.sign(
+      { userId: user._id, userType: user.userType },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
-    res.json({ token });
+
+    res.json({ token: jwtToken });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
 });
-
-
 
 // Protected Dashboard Route
 router.get('/dashboard', authMiddleware, async (req, res) => {
@@ -99,6 +113,5 @@ const adminMiddleware = (req, res, next) => {
   }
   next();
 };
-
 
 module.exports = router;

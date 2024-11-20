@@ -34,38 +34,37 @@ router.post('/', authMiddleware, upload.array('photos', 10), async (req, res) =>
 
 // Update a product
 router.put('/:id', authMiddleware, upload.array('photos', 10), async (req, res) => {
-    try {
-      const { name, price, category, details } = req.body;
-  
-      // Extract uploaded photos
-      const photos = req.files.map((file) => `/uploads/${file.filename}`);
-  
-      // Prepare fields for update
-      const updateFields = { name, price, category, details };
-  
-      // Only add photos to updateFields if new photos were uploaded
-      if (photos.length > 0) {
-        updateFields.photos = photos;
-      }
-  
-      // Find and update the product
-      const updatedProduct = await Product.findByIdAndUpdate(
-        req.params.id,
-        updateFields,
-        { new: true } // Return the updated document
-      );
-  
-      if (!updatedProduct) {
-        return res.status(404).json({ message: 'Product not found' });
-      }
-  
-      res.json({ message: 'Product updated successfully', product: updatedProduct });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Server error' });
+  try {
+    const { name, price, category, details } = req.body;
+
+    // Extract uploaded photos
+    const photos = req.files.map((file) => `/uploads/${file.filename}`);
+
+    // Prepare fields for update
+    const updateFields = { name, price, category, details };
+
+    // Only add photos to updateFields if new photos were uploaded
+    if (photos.length > 0) {
+      updateFields.photos = photos;
     }
-  });
-  
+
+    // Find and update the product
+    const updatedProduct = await Product.findByIdAndUpdate(
+      req.params.id,
+      updateFields,
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedProduct) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    res.json({ message: 'Product updated successfully', product: updatedProduct });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
 // Delete a product
 router.delete('/:id', authMiddleware, async (req, res) => {
