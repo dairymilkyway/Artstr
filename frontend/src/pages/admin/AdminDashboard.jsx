@@ -1,25 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import MUIDataTable from 'mui-datatables';
 import axios from 'axios';
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+import IconButton from '@mui/material/IconButton';
+import { ThemeProvider, createTheme, Button, TextField, Modal } from '@mui/material';
+import Sidebar from './Sidebar'; // Adjust the relative path based on your project structure
+import '../../styles/AdminDashboard.css';
+
+// Custom theme to mimic Spotify design
+const theme = createTheme({
+  palette: {
+    mode: 'dark', // Dark mode for a Spotify look
+    primary: {
+      main: '#1DB954', // Spotify green
+    },
+    secondary: {
+      main: '#191414', // Spotify dark background
+    },
+  },
+  typography: {
+    fontFamily: 'Roboto, sans-serif',
+  },
+});
 
 const AdminDashboard = () => {
   const [products, setProducts] = useState([]);
-  const [selectedProduct, setSelectedProduct] = useState(null); // For editing
-  const [showModal, setShowModal] = useState(false); // Toggle modal visibility
-  const [selectedRows, setSelectedRows] = useState([]); // Tracks selected rows
+  const [selectedRows, setSelectedRows] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
-  // Function to get the token from localStorage
   const getToken = () => {
     return localStorage.getItem('token');
   };
 
-  // Fetch products
   const fetchProducts = async () => {
     try {
       const response = await axios.get('http://localhost:5000/api/products', {
-        headers: {
-          Authorization: getToken(),
-        },
+        headers: { Authorization: getToken() },
       });
       setProducts(response.data);
     } catch (error) {
@@ -31,13 +49,46 @@ const AdminDashboard = () => {
     fetchProducts();
   }, []);
 
-  // Add product
+  const handleDeleteSelected = async () => {
+    const idsToDelete = selectedRows.map((rowIndex) => products[rowIndex]._id);
+    try {
+      await axios.post(
+        'http://localhost:5000/api/products/delete',
+        { ids: idsToDelete },
+        { headers: { Authorization: getToken() } }
+      );
+      alert('Selected products deleted successfully');
+      fetchProducts();
+      setSelectedRows([]);
+      window.location.reload(true);
+    } catch (error) {
+      console.error('Error deleting products:', error.response?.data?.message || error.message);
+    }
+  };
+
+  const handleOpenModal = (rowIndex) => {
+    setSelectedProduct(products[rowIndex]);
+    setShowModal(true);
+  };
+
+  const updateProduct = async (id, formData) => {
+    try {
+      await axios.put(`http://localhost:5000/api/products/${id}`, formData, {
+        headers: { Authorization: getToken() },
+      });
+      alert('Product updated successfully');
+      fetchProducts();
+      setShowModal(false);
+      window.location.reload(true);
+    } catch (error) {
+      console.error('Error updating product:', error.response?.data?.message || error.message);
+    }
+  };
+
   const addProduct = async (formData) => {
     try {
       await axios.post('http://localhost:5000/api/products', formData, {
-        headers: {
-          Authorization: getToken(),
-        },
+        headers: { Authorization: getToken() },
       });
       alert('Product added successfully');
       fetchProducts();
@@ -46,59 +97,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Update product
-  const updateProduct = async (id, formData) => {
-    try {
-      await axios.put(`http://localhost:5000/api/products/${id}`, formData, {
-        headers: {
-          Authorization: getToken(),
-        },
-      });
-      alert('Product updated successfully');
-      fetchProducts();
-      setShowModal(false); // Close modal
-    } catch (error) {
-      console.error('Error updating product:', error.response?.data?.message || error.message);
-    }
-  };
-
-  // Delete product
-  const deleteProduct = async (id) => {
-    try {
-      await axios.delete(`http://localhost:5000/api/products/${id}`, {
-        headers: {
-          Authorization: getToken(),
-        },
-      });
-      alert('Product deleted successfully');
-      fetchProducts();
-    } catch (error) {
-      console.error('Error deleting product:', error.response?.data?.message || error.message);
-    }
-  };
-
-  // Bulk delete products
-  const bulkDeleteProducts = async () => {
-    const idsToDelete = selectedRows.map((rowIndex) => products[rowIndex]._id);
-    try {
-      await axios.post(
-        'http://localhost:5000/api/products/delete',
-        { ids: idsToDelete },
-        {
-          headers: {
-            Authorization: getToken(),
-          },
-        }
-      );
-      alert('Selected products deleted successfully');
-      fetchProducts();
-      setSelectedRows([]); // Clear selected rows after deletion
-    } catch (error) {
-      console.error('Error deleting products:', error.response?.data?.message || error.message);
-    }
-  };
-
-  // Table columns
   const columns = [
     { name: 'name', label: 'Name' },
     { name: 'price', label: 'Price' },
@@ -121,6 +119,7 @@ const AdminDashboard = () => {
         ),
       },
     },
+    { name: 'details', label: 'Details' },  // Add this column to show details in the table
     {
       name: 'Action',
       label: 'Action',
@@ -128,71 +127,32 @@ const AdminDashboard = () => {
         customBodyRender: (value, tableMeta) => {
           const rowIndex = tableMeta.rowIndex;
           const product = products[rowIndex];
-
+  
           return (
             <div>
-              <button
-                onClick={() => {
-                  setSelectedProduct(product);
-                  setShowModal(true);
-                }}
-                style={{
-                  backgroundColor: '#2196F3',
-                  color: 'white',
-                  border: 'none',
-                  padding: '5px 10px',
-                  marginRight: '5px',
-                  cursor: 'pointer',
-                }}
-              >
-                Update
-              </button>
-              <button
-                onClick={() => deleteProduct(product._id)}
-                style={{
-                  backgroundColor: '#f44336',
-                  color: 'white',
-                  border: 'none',
-                  padding: '5px 10px',
-                  cursor: 'pointer',
-                }}
-              >
-                Delete
-              </button>
+              <IconButton onClick={() => handleOpenModal(rowIndex)}>
+                <EditIcon style={{ color: '#2196F3' }} />
+              </IconButton>
             </div>
           );
         },
       },
     },
   ];
+  
 
-  // Table options
   const options = {
-    selectableRows: 'multiple', // Enable multiple row selection
+    selectableRows: 'multiple',
     onRowsSelect: (currentRowsSelected, allRowsSelected) => {
       const selectedRowIndexes = allRowsSelected.map((row) => row.index);
       setSelectedRows(selectedRowIndexes);
     },
-    customToolbarSelect: (selectedRows) => {
-      const selectedCount = selectedRows.data.length;
-      return (
-        selectedCount >= 2 && (
-          <button
-            onClick={bulkDeleteProducts}
-            style={{
-              backgroundColor: '#f44336',
-              color: 'white',
-              border: 'none',
-              padding: '5px 10px',
-              cursor: 'pointer',
-            }}
-          >
-            Bulk Delete
-          </button>
-        )
-      );
-    },
-    expandableRows: true, // Enable expandable rows
+    customToolbarSelect: () => (
+      <IconButton onClick={handleDeleteSelected}>
+        <DeleteIcon style={{ color: '#f44336' }} />
+      </IconButton>
+    ),
+    expandableRows: true,
     renderExpandableRow: (rowData, rowMeta) => {
       const rowIndex = rowMeta.dataIndex;
       const product = products[rowIndex];
@@ -200,29 +160,16 @@ const AdminDashboard = () => {
       return (
         <tr>
           <td colSpan={columns.length + 1}>
-            <div style={{ padding: '10px', backgroundColor: '#f9f9f9', border: '1px solid #ddd' }}>
-              <p>
-                <strong>Name:</strong> {product.name}
-              </p>
-              <p>
-                <strong>Price:</strong> ${product.price}
-              </p>
-              <p>
-                <strong>Category:</strong> {product.category}
-              </p>
-              <p>
-                <strong>Details:</strong> {product.details}
-              </p>
+            <div className="expandable-row">
+              <p><strong>Name:</strong> {product.name}</p>
+              <p><strong>Price:</strong> ${product.price}</p>
+              <p><strong>Category:</strong> {product.category}</p>
+              <p><strong>Details:</strong> {product.details}</p>
               <div>
                 <strong>Photos:</strong>
                 <div>
                   {product.photos.map((url, index) => (
-                    <img
-                      key={index}
-                      src={`http://localhost:5000${url}`}
-                      alt="Product"
-                      style={{ width: '100px', marginRight: '5px', marginTop: '5px' }}
-                    />
+                    <img key={index} src={`http://localhost:5000${url}`} alt="Product" className="expandable-photo" />
                   ))}
                 </div>
               </div>
@@ -234,97 +181,57 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div style={{ padding: '20px', height: '100vh', overflowY: 'auto' }}>
-      <h1>Admin Dashboard</h1>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          const formData = new FormData(e.target);
-          addProduct(formData);
-          e.target.reset();
-        }}
-      >
-        <input type="text" name="name" placeholder="Product Name" required />
-        <input type="number" name="price" placeholder="Price" required />
-        <input type="text" name="category" placeholder="Category" required />
-        <textarea name="details" placeholder="Details" required></textarea>
-        <input type="file" name="photos" multiple />
-        <button type="submit">Add Product</button>
-      </form>
-      <MUIDataTable title="Products" data={products} columns={columns} options={options} />
-
-      {/* Update Modal */}
-      {showModal && selectedProduct && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            backgroundColor: 'white',
-            padding: '20px',
-            borderRadius: '10px',
-            zIndex: 1000,
-            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+    <ThemeProvider theme={theme}>
+           <div style={{ display: 'flex' }}>
+           <Sidebar /> {/* Include Sidebar */}
+      <div className="admin-dashboard">
+        <h1 className="title">Admin Dashboard</h1>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            addProduct(formData);
+            e.target.reset();
           }}
+          className="add-product-form"
         >
-          <h3>Update Product</h3>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.target);
-              updateProduct(selectedProduct._id, formData);
-            }}
-          >
-            <input
-              type="text"
-              name="name"
-              defaultValue={selectedProduct.name}
-              placeholder="Product Name"
-              required
-            />
-            <input
-              type="number"
-              name="price"
-              defaultValue={selectedProduct.price}
-              placeholder="Price"
-              required
-            />
-            <input
-              type="text"
-              name="category"
-              defaultValue={selectedProduct.category}
-              placeholder="Category"
-              required
-            />
-            <textarea
-              name="details"
-              defaultValue={selectedProduct.details}
-              placeholder="Details"
-              required
-            ></textarea>
-            <input type="file" name="photos" multiple />
-            <div>
-              <button type="submit" style={{ marginRight: '10px' }}>
-                Save Changes
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowModal(false)}
-                style={{
-                  backgroundColor: '#f44336',
-                  color: 'white',
-                  border: 'none',
-                  padding: '5px 10px',
+          <TextField label="Product Name" name="name" variant="outlined" fullWidth required />
+          <TextField label="Price" name="price" type="number" variant="outlined" fullWidth required />
+          <TextField label="Category" name="category" variant="outlined" fullWidth required />
+          <TextField label="Details" name="details" variant="outlined" fullWidth multiline required />
+          <input type="file" name="photos" multiple className="file-input" />
+          <Button type="submit" variant="contained" color="primary" className="submit-button">Add Product</Button>
+        </form>
+        <MUIDataTable title="Products" data={products} columns={columns} options={options} />
+
+        {/* Update Modal */}
+        {showModal && selectedProduct && (
+          <Modal open={showModal} onClose={() => setShowModal(false)}>
+            <div className="modal-content">
+              <h3>Update Product</h3>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.target);
+                  updateProduct(selectedProduct._id, formData);
                 }}
               >
-                Cancel
-              </button>
+                <TextField label="Product Name" name="name" defaultValue={selectedProduct.name} variant="outlined" fullWidth required />
+                <TextField label="Price" name="price" defaultValue={selectedProduct.price} type="number" variant="outlined" fullWidth required />
+                <TextField label="Category" name="category" defaultValue={selectedProduct.category} variant="outlined" fullWidth required />
+                <TextField label="Details" name="details" defaultValue={selectedProduct.details} variant="outlined" fullWidth multiline required />
+                <input type="file" name="photos" multiple className="file-input" />
+                <div className="modal-buttons">
+                  <Button type="submit" variant="contained" color="primary">Save Changes</Button>
+                  <Button variant="contained" color="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
+                </div>
+              </form>
             </div>
-          </form>
-        </div>
-      )}
-    </div>
+          </Modal>
+        )}
+      </div>
+      </div>
+    </ThemeProvider>
   );
 };
 

@@ -1,0 +1,27 @@
+/* Sidebar Styling */
+.sidebar-header {
+    display: flex;
+    justify-content: center;
+    padding: 20px 0;
+  }
+  
+  .sidebar-logo {
+    width: 120px; /* Spotify logo size */
+    height: auto;
+  }
+  
+  .MuiListItemText-root {
+    color: white; /* Text color */
+  }
+  
+  /* Active State for List Items */
+  .MuiListItem-root:hover {
+    background-color: rgba(29, 185, 84, 0.1); /* Light green highlight */
+    border-radius: 4px;
+  }
+  
+  /* Adjusting Icon and Text Alignment */
+  .MuiListItemIcon-root {
+    min-width: 40px;
+  }
+  

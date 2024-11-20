@@ -1,0 +1,60 @@
+/* Admin Dashboard Styles */
+.admin-dashboard {
+    padding: 20px;
+    background-color: #191414;
+    color: white;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  
+  .title {
+    color: #1db954;
+    font-size: 2rem;
+    text-align: center;
+    margin-bottom: 30px;
+  }
+  
+  .add-product-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 30px;
+  }
+  
+  .submit-button {
+    background-color: #1db954;
+    color: white;
+  }
+  
+  .file-input {
+    margin: 10px 0;
+  }
+  
+  .expandable-row {
+    padding: 10px;
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+  }
+  
+  .expandable-photo {
+    width: 100px;
+    height: auto;
+    margin-right: 10px;
+    margin-top: 5px;
+  }
+  
+  .modal-content {
+    background-color: #191414;
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 500px;
+    margin: auto;
+  }
+  
+  .modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+  
