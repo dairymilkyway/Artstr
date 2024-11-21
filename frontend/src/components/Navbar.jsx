@@ -22,23 +22,23 @@ const Navbar = () => {
   };
 
   useEffect(() => {
-    const fetchUserData = async () => {
+    const fetchProfilePicture = async () => {
       if (!token) return;
 
       try {
-        const response = await axios.get('/api/users/current', {
+        const response = await axios.get('http://localhost:5000/api/users/profile', {
           headers: {
-            Authorization: `Bearer ${token}`, // Adjust according to your authentication setup
+            Authorization: `Bearer ${token}`,
           },
         });
         const user = response.data.user;
-        setProfilePicture(user.profilePicture); // Assuming `profilePicture` is a URL
+        setProfilePicture(user.profilePicture); // Assuming the backend returns a `profilePicture` URL
       } catch (error) {
-        console.error('Error fetching user data:', error);
+        console.error('Error fetching profile picture:', error.response?.data?.message || error.message);
       }
     };
 
-    fetchUserData();
+    fetchProfilePicture();
   }, [token]);
 
   const commonButtonStyles = {
@@ -134,7 +134,7 @@ const Navbar = () => {
             {/* Profile Picture */}
             <IconButton onClick={() => navigate('/profile')} sx={{ padding: 0 }}>
               <Avatar
-                src={profilePicture || './assets/default-profile.png'} // Replace with your default image URL
+                src={profilePicture || './assets/default-profile.png'} // Use default image if no profile picture
                 alt="Profile"
                 sx={{
                   width: 40,

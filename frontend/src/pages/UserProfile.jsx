@@ -10,51 +10,65 @@ import {
 } from '@mui/material';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as Yup from 'yup';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000/api/users'; // Match backend route
 const getToken = () => localStorage.getItem('token');
 
+// Validation schema
+const profileValidationSchema = Yup.object().shape({
+  firstName: Yup.string().required('First name is required').min(2, 'Too short'),
+  lastName: Yup.string().required('Last name is required').min(2, 'Too short'),
+  email: Yup.string().email('Invalid email').required('Email is required'),
+  username: Yup.string().required('Username is required').min(3, 'Too short'),
+});
+
 const UserProfile = () => {
-  const [userData, setUserData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    username: '',
-  });
   const [profilePicture, setProfilePicture] = useState(null);
-  const [profilePicturePreview, setProfilePicturePreview] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [profilePicturePreview, setProfilePicturePreview] = useState('/default-profile.png');
+  const [isProfileUpdating, setIsProfileUpdating] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const response = await axios.get(`${API_BASE_URL}/profile`, {
-          headers: {
-            Authorization: `Bearer ${getToken()}`,
-          },
-        });
-        const user = response.data.user;
-        setUserData({
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          username: user.username,
-        });
-        setProfilePicturePreview(user.profilePicture);
-      } catch (error) {
-        toast.error('Failed to fetch user data');
-        console.error('Error:', error);
-      } finally {
-        setIsFetching(false);
-      }
-    };
-    fetchUserData();
-  }, []);
+  // Profile update form
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(profileValidationSchema),
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      username: '',
+    },
+  });
 
-  const handleInputChange = (e) => {
-    setUserData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  // Fetch user data
+  const fetchUserData = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/users/profile', {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      const user = response.data.user;
+
+      setValue('firstName', user.firstName || '');
+      setValue('lastName', user.lastName || '');
+      setValue('email', user.email || '');
+      setValue('username', user.username || '');
+      setProfilePicturePreview(
+        user.profilePicture === 'default-profile.png'
+          ? '/default-profile.png'
+          : user.profilePicture
+      );
+    } catch (error) {
+      toast.error('Error fetching user data');
+    } finally {
+      setIsFetching(false);
+    }
   };
 
   const handleFileChange = (e) => {
@@ -69,34 +83,40 @@ const UserProfile = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    const formData = new FormData();
-    Object.entries(userData).forEach(([key, value]) => {
-      formData.append(key, value);
-    });
-    if (profilePicture) {
-      formData.append('profilePicture', profilePicture);
-    }
+  const handleProfileUpdate = async (data) => {
+    setIsProfileUpdating(true);
 
     try {
-      const response = await axios.put(`${API_BASE_URL}/update-profile`, formData, {
+      // Prepare data for the backend
+      const formData = new FormData();
+      Object.entries(data).forEach(([key, value]) => {
+        if (value) formData.append(key, value);
+      });
+      if (profilePicture) {
+        formData.append('profilePicture', profilePicture);
+      }
+
+      // Send update request to the backend
+      const response = await axios.put('http://localhost:5000/api/users/update-profile', formData, {
         headers: {
           Authorization: `Bearer ${getToken()}`,
           'Content-Type': 'multipart/form-data',
         },
       });
+
       toast.success('Profile updated successfully');
       setProfilePicturePreview(response.data.user.profilePicture);
     } catch (error) {
-      toast.error('Failed to update profile');
-      console.error('Error:', error);
+      console.error('Error updating profile:', error.message);
+      toast.error('Failed to update profile. Please try again.');
     } finally {
-      setIsLoading(false);
+      setIsProfileUpdating(false);
     }
   };
+
+  useEffect(() => {
+    fetchUserData();
+  }, []);
 
   if (isFetching) {
     return (
@@ -113,50 +133,92 @@ const UserProfile = () => {
         Update Profile
       </Typography>
 
-      <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
-        <Grid item>
-          <Avatar
-            src={profilePicturePreview || '/default-profile.png'}
-            sx={{ width: 80, height: 80 }}
-          />
-        </Grid>
-        <Grid item>
-          <Button variant="contained" component="label">
-            Upload Picture
-            <input 
-              type="file" 
-              hidden 
-              onChange={handleFileChange} 
-              accept="image/*"
+      {/* Profile Update Form */}
+      <form onSubmit={handleSubmit(handleProfileUpdate)}>
+        <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
+          <Grid item>
+            <Avatar
+              src={profilePicturePreview}
+              sx={{ width: 80, height: 80 }}
             />
-          </Button>
+          </Grid>
+          <Grid item>
+            <Button variant="contained" component="label">
+              Upload Picture
+              <input
+                type="file"
+                hidden
+                onChange={handleFileChange}
+                accept="image/*"
+              />
+            </Button>
+          </Grid>
         </Grid>
-      </Grid>
-
-      <form onSubmit={handleSubmit}>
-        {Object.entries(userData).map(([key, value]) => (
-          <TextField
-            key={key}
-            fullWidth
-            margin="normal"
-            label={key.charAt(0).toUpperCase() + key.slice(1)}
-            name={key}
-            type={key === 'email' ? 'email' : 'text'}
-            value={value}
-            onChange={handleInputChange}
-            required
-          />
-        ))}
-        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
-          <Button 
-            type="submit" 
-            variant="contained" 
-            color="primary" 
-            disabled={isLoading}
-          >
-            {isLoading ? <CircularProgress size={24} /> : 'Update Profile'}
-          </Button>
-        </Box>
+        <Controller
+          name="firstName"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="First Name"
+              fullWidth
+              margin="normal"
+              error={!!errors.firstName}
+              helperText={errors.firstName?.message}
+            />
+          )}
+        />
+        <Controller
+          name="lastName"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="Last Name"
+              fullWidth
+              margin="normal"
+              error={!!errors.lastName}
+              helperText={errors.lastName?.message}
+            />
+          )}
+        />
+        <Controller
+          name="email"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="Email"
+              fullWidth
+              margin="normal"
+              error={!!errors.email}
+              helperText={errors.email?.message}
+            />
+          )}
+        />
+        <Controller
+          name="username"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="Username"
+              fullWidth
+              margin="normal"
+              error={!!errors.username}
+              helperText={errors.username?.message}
+            />
+          )}
+        />
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          disabled={isProfileUpdating}
+          sx={{ mt: 3 }}
+        >
+          {isProfileUpdating ? <CircularProgress size={24} /> : 'Update Details'}
+        </Button>
       </form>
     </Box>
   );

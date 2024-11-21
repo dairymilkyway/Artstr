@@ -1,49 +1,96 @@
 const express = require('express');
-const upload = require('../utils/multerConfig'); // Cloudinary-Multer configuration
-const User = require('../models/User'); // User model
-const router = express.Router();
+const User = require('../models/User');
 const authMiddleware = require('../middleware/authMiddleware');
+const multer = require('multer');
+const { storage } = require('../utils/multerConfig'); // Import Cloudinary storage configuration
+const upload = multer({ storage }); // Multer middleware with Cloudinary storage
+const router = express.Router();
+const bcrypt = require('bcryptjs');
+// Fetch user profile
+router.get('/profile', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json({ user });
+  } catch (error) {
+    console.error('Error fetching profile:', error.message);
+    res.status(500).json({ message: 'Error fetching profile' });
+  }
+});
 
 // Update user profile
 router.put('/update-profile', authMiddleware, upload.single('profilePicture'), async (req, res) => {
   try {
-    const { firstName, lastName, email, username } = req.body;
+    const { firstName, lastName, email, username, currentPassword, newPassword } = req.body;
 
-    // Prepare updated data
-    const updatedData = { firstName, lastName, email, username };
-
-    // If a profile picture is uploaded, update the profilePicture field
-    if (req.file) {
-      updatedData.profilePicture = req.file.path; // Cloudinary automatically sets the URL here
-    }
-
-    // Update the user in the database
-    const updatedUser = await User.findByIdAndUpdate(req.user.id, updatedData, { new: true });
-
-    if (!updatedUser) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    res.status(200).json({
-      message: 'Profile updated successfully',
-      user: updatedUser,
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Error updating profile', error: error.message });
-  }
-});
-
-// Fetch user profile
-router.get('/profile', authMiddleware, async (req, res) => {
-  try {
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    res.json({ user });
+
+    // Validate current password if newPassword is provided
+    if (newPassword) {
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ message: 'Current password is incorrect' });
+      }
+
+      user.password = await bcrypt.hash(newPassword, 10);
+    }
+
+    // Update other fields
+    user.firstName = firstName || user.firstName;
+    user.lastName = lastName || user.lastName;
+    user.email = email || user.email;
+    user.username = username || user.username;
+
+    // Update profile picture if provided
+    if (req.file) {
+      user.profilePicture = req.file.path;
+    }
+
+    await user.save();
+
+    res.status(200).json({ message: 'Profile updated successfully', user });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching profile' });
+    console.error('Error updating profile:', error.message);
+    res.status(500).json({ message: 'Error updating profile' });
   }
 });
+
+// // Change Password API
+// router.put('/change-password', authMiddleware, async (req, res) => {
+//   const { currentPassword, newPassword } = req.body;
+
+//   try {
+//     if (!currentPassword || !newPassword) {
+//       return res.status(400).json({ message: 'Current password and new password are required' });
+//     }
+
+//     const user = await User.findById(req.user.id);
+//     if (!user) {
+//       return res.status(404).json({ message: 'User not found' });
+//     }
+
+//     // Compare current password
+//     const isMatch = await bcrypt.compare(currentPassword, user.password);
+//     console.log('Password Comparison:', { currentPassword, storedPassword: user.password, isMatch });
+
+//     if (!isMatch) {
+//       return res.status(400).json({ message: 'Current password is incorrect' });
+//     }
+
+//     // Hash new password and save
+//     user.password = await bcrypt.hash(newPassword, 10);
+//     await user.save();
+
+//     res.status(200).json({ message: 'Password updated successfully' });
+//   } catch (error) {
+//     console.error('Error changing password:', error.message);
+//     res.status(500).json({ message: 'Error changing password' });
+//   }
+// });
 
 module.exports = router;
