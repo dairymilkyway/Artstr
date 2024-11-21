@@ -5,6 +5,7 @@ import theme from './theme.js'; // Import your custom theme
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import UserProfile from './pages/UserProfile';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ProtectedRoute from './ProtectedRoute';
 
@@ -16,6 +17,14 @@ const App = () => {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute userType="user">
+                <UserProfile />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/dashboard"
             element={

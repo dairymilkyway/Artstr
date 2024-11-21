@@ -7,7 +7,11 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  userType: { type: String, default: 'user' }, // Added userType with default value
+  userType: { type: String, default: 'user' },
+  profilePicture: { 
+    type: String, 
+    default: 'default-profile.png' // Default placeholder image
+  }
 });
 
 // Hash password before saving

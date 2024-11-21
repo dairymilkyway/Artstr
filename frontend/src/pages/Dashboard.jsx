@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Container, Typography, CircularProgress, Grid, Alert, Box } from '@mui/material';
 import ProductCard from '../components/ProductCard';
-import Navbar from '../components/Navbar'; // Import the Navbar component
-import './Dashboard.css';
+import Navbar from '../components/Navbar';
 
 const Dashboard = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Function to get the token from localStorage
   const getToken = () => {
     return localStorage.getItem('token');
   };
@@ -36,22 +35,34 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div>
-      <Navbar /> {/* Add the Navbar component */}
-      <div style={{ textAlign: 'center', marginTop: '50px' }}>
-        <h1>Welcome to the Dashboard</h1>
-        {error && <div className="error-message">{error}</div>}
+    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ position: 'sticky', top: 0, zIndex: 1 }}>
+        <Navbar />
+      </Box>
+
+      <Box sx={{ 
+        flexGrow: 1, 
+        overflowY: 'auto',
+        padding: 3
+      }}>
+
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
         {loading ? (
-          <div>Loading products...</div>
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <CircularProgress />
+          </Box>
         ) : (
-          <div className="product-list">
+          <Grid container spacing={3}>
             {products.map((product) => (
-              <ProductCard key={product._id} product={product} />
+              <Grid item key={product._id} xs={12} sm={6} md={4}>
+                <ProductCard product={product} />
+              </Grid>
             ))}
-          </div>
+          </Grid>
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 };
 
