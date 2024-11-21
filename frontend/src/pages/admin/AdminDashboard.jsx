@@ -110,7 +110,7 @@ const AdminDashboard = () => {
             {photos.map((url, index) => (
               <img
                 key={index}
-                src={`http://localhost:5000${url}`}
+                src={url}
                 alt="Product"
                 style={{ width: '50px', height: '50px', marginRight: '5px' }}
               />
@@ -119,7 +119,7 @@ const AdminDashboard = () => {
         ),
       },
     },
-    { name: 'details', label: 'Details' },  // Add this column to show details in the table
+    { name: 'details', label: 'Details' },
     {
       name: 'Action',
       label: 'Action',
@@ -127,7 +127,7 @@ const AdminDashboard = () => {
         customBodyRender: (value, tableMeta) => {
           const rowIndex = tableMeta.rowIndex;
           const product = products[rowIndex];
-  
+
           return (
             <div>
               <IconButton onClick={() => handleOpenModal(rowIndex)}>
@@ -139,7 +139,6 @@ const AdminDashboard = () => {
       },
     },
   ];
-  
 
   const options = {
     selectableRows: 'multiple',
@@ -169,7 +168,7 @@ const AdminDashboard = () => {
                 <strong>Photos:</strong>
                 <div>
                   {product.photos.map((url, index) => (
-                    <img key={index} src={`http://localhost:5000${url}`} alt="Product" className="expandable-photo" />
+                    <img key={index} src={url} alt="Product" className="expandable-photo" />
                   ))}
                 </div>
               </div>
@@ -182,54 +181,54 @@ const AdminDashboard = () => {
 
   return (
     <ThemeProvider theme={theme}>
-           <div style={{ display: 'flex' }}>
-           <Sidebar /> {/* Include Sidebar */}
-      <div className="admin-dashboard">
-        <h1 className="title">Admin Dashboard</h1>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            addProduct(formData);
-            e.target.reset();
-          }}
-          className="add-product-form"
-        >
-          <TextField label="Product Name" name="name" variant="outlined" fullWidth required />
-          <TextField label="Price" name="price" type="number" variant="outlined" fullWidth required />
-          <TextField label="Category" name="category" variant="outlined" fullWidth required />
-          <TextField label="Details" name="details" variant="outlined" fullWidth multiline required />
-          <input type="file" name="photos" multiple className="file-input" />
-          <Button type="submit" variant="contained" color="primary" className="submit-button">Add Product</Button>
-        </form>
-        <MUIDataTable title="Products" data={products} columns={columns} options={options} />
+      <div style={{ display: 'flex' }}>
+        <Sidebar /> {/* Include Sidebar */}
+        <div className="admin-dashboard">
+          <h1 className="title">Admin Dashboard</h1>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target);
+              addProduct(formData);
+              e.target.reset();
+            }}
+            className="add-product-form"
+          >
+            <TextField label="Product Name" name="name" variant="outlined" fullWidth required />
+            <TextField label="Price" name="price" type="number" variant="outlined" fullWidth required />
+            <TextField label="Category" name="category" variant="outlined" fullWidth required />
+            <TextField label="Details" name="details" variant="outlined" fullWidth multiline required />
+            <input type="file" name="photos" multiple className="file-input" />
+            <Button type="submit" variant="contained" color="primary" className="submit-button">Add Product</Button>
+          </form>
+          <MUIDataTable title="Products" data={products} columns={columns} options={options} />
 
-        {/* Update Modal */}
-        {showModal && selectedProduct && (
-          <Modal open={showModal} onClose={() => setShowModal(false)}>
-            <div className="modal-content">
-              <h3>Update Product</h3>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const formData = new FormData(e.target);
-                  updateProduct(selectedProduct._id, formData);
-                }}
-              >
-                <TextField label="Product Name" name="name" defaultValue={selectedProduct.name} variant="outlined" fullWidth required />
-                <TextField label="Price" name="price" defaultValue={selectedProduct.price} type="number" variant="outlined" fullWidth required />
-                <TextField label="Category" name="category" defaultValue={selectedProduct.category} variant="outlined" fullWidth required />
-                <TextField label="Details" name="details" defaultValue={selectedProduct.details} variant="outlined" fullWidth multiline required />
-                <input type="file" name="photos" multiple className="file-input" />
-                <div className="modal-buttons">
-                  <Button type="submit" variant="contained" color="primary">Save Changes</Button>
-                  <Button variant="contained" color="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
-                </div>
-              </form>
-            </div>
-          </Modal>
-        )}
-      </div>
+          {/* Update Modal */}
+          {showModal && selectedProduct && (
+            <Modal open={showModal} onClose={() => setShowModal(false)}>
+              <div className="modal-content">
+                <h3>Update Product</h3>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.target);
+                    updateProduct(selectedProduct._id, formData);
+                  }}
+                >
+                  <TextField label="Product Name" name="name" defaultValue={selectedProduct.name} variant="outlined" fullWidth required />
+                  <TextField label="Price" name="price" defaultValue={selectedProduct.price} type="number" variant="outlined" fullWidth required />
+                  <TextField label="Category" name="category" defaultValue={selectedProduct.category} variant="outlined" fullWidth required />
+                  <TextField label="Details" name="details" defaultValue={selectedProduct.details} variant="outlined" fullWidth multiline required />
+                  <input type="file" name="photos" multiple className="file-input" />
+                  <div className="modal-buttons">
+                    <Button type="submit" variant="contained" color="primary">Save Changes</Button>
+                    <Button variant="contained" color="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
+                  </div>
+                </form>
+              </div>
+            </Modal>
+          )}
+        </div>
       </div>
     </ThemeProvider>
   );

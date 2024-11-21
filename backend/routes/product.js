@@ -1,7 +1,7 @@
 const express = require('express');
 const Product = require('../models/Product');
 const authMiddleware = require('../middleware/authMiddleware');
-const upload = require('../utils/multerConfig'); // Multer configuration for file uploads
+const upload = require('../utils/multerConfig');
 
 const router = express.Router();
 
@@ -20,7 +20,7 @@ router.get('/', authMiddleware, async (req, res) => {
 router.post('/', authMiddleware, upload.array('photos', 10), async (req, res) => {
   try {
     const { name, price, category, details } = req.body;
-    const photos = req.files.map((file) => `/uploads/${file.filename}`);
+    const photos = req.files.map((file) => file.path); // Cloudinary URLs
 
     const newProduct = new Product({ name, price, category, details, photos });
     await newProduct.save();
@@ -36,25 +36,14 @@ router.post('/', authMiddleware, upload.array('photos', 10), async (req, res) =>
 router.put('/:id', authMiddleware, upload.array('photos', 10), async (req, res) => {
   try {
     const { name, price, category, details } = req.body;
+    const photos = req.files.map((file) => file.path); // Cloudinary URLs
 
-    // Extract uploaded photos
-    const photos = req.files.map((file) => `/uploads/${file.filename}`);
-
-    // Prepare fields for update
     const updateFields = { name, price, category, details };
-
-    // Only add photos to updateFields if new photos were uploaded
     if (photos.length > 0) {
       updateFields.photos = photos;
     }
 
-    // Find and update the product
-    const updatedProduct = await Product.findByIdAndUpdate(
-      req.params.id,
-      updateFields,
-      { new: true } // Return the updated document
-    );
-
+    const updatedProduct = await Product.findByIdAndUpdate(req.params.id, updateFields, { new: true });
     if (!updatedProduct) {
       return res.status(404).json({ message: 'Product not found' });
     }

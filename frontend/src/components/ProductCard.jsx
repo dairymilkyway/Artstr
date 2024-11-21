@@ -3,9 +3,8 @@ import PropTypes from 'prop-types';
 import './ProductCard.css';
 
 const ProductCard = ({ product }) => {
-  const baseURL = 'http://localhost:5000'; // Update to your server's URL
   const productImage = product.photos.length > 0 
-    ? `${baseURL}${product.photos[0]}` 
+    ? product.photos[0] 
     : '/images/default-product.png'; // Ensure the default image exists
 
   return (
@@ -29,7 +28,7 @@ ProductCard.propTypes = {
     price: PropTypes.number.isRequired,
     category: PropTypes.string.isRequired,
     details: PropTypes.string,
-    photos: PropTypes.arrayOf(PropTypes.string).isRequired,
+    photos: PropTypes.arrayOf(PropTypes.string),
   }).isRequired,
 };
 
