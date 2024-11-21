@@ -46,7 +46,13 @@ const AdminDashboard = () => {
     fetchProducts();
   }, []);
 
+  // Delete selected rows (supports single and bulk delete)
   const handleDeleteSelected = async () => {
+    if (selectedRows.length === 0) {
+      toast.warn('No rows selected for deletion', { position: 'top-right' });
+      return;
+    }
+
     const idsToDelete = selectedRows.map((rowIndex) => products[rowIndex]._id);
     try {
       await axios.post(
@@ -57,6 +63,7 @@ const AdminDashboard = () => {
       toast.success('Selected products deleted successfully', { position: 'top-right' });
       fetchProducts();
       setSelectedRows([]);
+      location.reload();
     } catch (error) {
       console.error('Error deleting products:', error.response?.data?.message || error.message);
       toast.error('Error deleting products', { position: 'top-right' });
@@ -68,75 +75,9 @@ const AdminDashboard = () => {
     setShowModal(true);
   };
 
-  // Yup schema for validation
-  const schema = yup.object().shape({
-    name: yup.string().required('Product Name is required'),
-    price: yup.number().positive('Price must be a positive number').required('Price is required'),
-    category: yup.string().required('Category is required'),
-    details: yup.string().required('Details are required'),
-    photos: yup
-      .mixed()
-      .test('fileType', 'Only image files are allowed', (value) => {
-        if (!value.length) return true; // No validation if no files are uploaded
-        return Array.from(value).every((file) => file.type.startsWith('image/'));
-      }),
-  });
-
-  // React Hook Form for Add Product
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm({
-    resolver: yupResolver(schema),
-  });
-
-  // React Hook Form for Update Product
-  const {
-    register: registerUpdate,
-    handleSubmit: handleSubmitUpdate,
-    formState: { errors: updateErrors },
-  } = useForm({
-    resolver: yupResolver(schema),
-    defaultValues: selectedProduct || {},
-  });
-
-  const addProduct = async (data) => {
+  const updateProduct = async (id, formData) => {
     try {
-      const formData = new FormData();
-      Object.keys(data).forEach((key) => {
-        if (key === 'photos') {
-          Array.from(data[key]).forEach((file) => formData.append('photos', file));
-        } else {
-          formData.append(key, data[key]);
-        }
-      });
-
-      await axios.post('http://localhost:5000/api/products', formData, {
-        headers: { Authorization: getToken() },
-      });
-      toast.success('Product added successfully', { position: 'top-right' });
-      fetchProducts();
-      reset();
-    } catch (error) {
-      console.error('Error adding product:', error.response?.data?.message || error.message);
-      toast.error('Error adding product', { position: 'top-right' });
-    }
-  };
-
-  const updateProduct = async (data) => {
-    try {
-      const formData = new FormData();
-      Object.keys(data).forEach((key) => {
-        if (key === 'photos') {
-          Array.from(data[key]).forEach((file) => formData.append('photos', file));
-        } else {
-          formData.append(key, data[key]);
-        }
-      });
-
-      await axios.put(`http://localhost:5000/api/products/${selectedProduct._id}`, formData, {
+      await axios.put(`http://localhost:5000/api/products/${id}`, formData, {
         headers: { Authorization: getToken() },
       });
       toast.success('Product updated successfully', { position: 'top-right' });
@@ -147,6 +88,41 @@ const AdminDashboard = () => {
       toast.error('Error updating product', { position: 'top-right' });
     }
   };
+
+  const addProduct = async (formData) => {
+    try {
+      await axios.post('http://localhost:5000/api/products', formData, {
+        headers: { Authorization: getToken() },
+      });
+      toast.success('Product added successfully', { position: 'top-right' });
+      fetchProducts();
+    } catch (error) {
+      console.error('Error adding product:', error.response?.data?.message || error.message);
+      toast.error('Error adding product', { position: 'top-right' });
+    }
+  };
+
+  const schema = yup.object().shape({
+    name: yup.string().required('Product Name is required'),
+    price: yup.number().positive('Price must be a positive number').required('Price is required'),
+    category: yup.string().required('Category is required'),
+    details: yup.string().required('Details are required'),
+    photos: yup
+      .mixed()
+      .test('fileType', 'Only image files are allowed', (value) => {
+        if (!value || value.length === 0) return true;
+        return Array.from(value).every((file) => file.type.startsWith('image/'));
+      }),
+  });
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm({
+    resolver: yupResolver(schema),
+  });
 
   const columns = [
     { name: 'name', label: 'Name' },
@@ -187,6 +163,19 @@ const AdminDashboard = () => {
     },
   ];
 
+  const options = {
+    selectableRows: 'multiple',
+    onRowsSelect: (currentRowsSelected, allRowsSelected) => {
+      const selectedRowIndexes = allRowsSelected.map((row) => row.index);
+      setSelectedRows(selectedRowIndexes);
+    },
+    customToolbarSelect: () => (
+      <IconButton onClick={handleDeleteSelected}>
+        <DeleteIcon style={{ color: '#f44336' }} />
+      </IconButton>
+    ),
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <ToastContainer />
@@ -194,9 +183,15 @@ const AdminDashboard = () => {
         <Sidebar />
         <div className="admin-dashboard">
           <h1 className="title">Admin Dashboard</h1>
-
-          {/* Add Product Form */}
-          <form onSubmit={handleSubmit(addProduct)} className="add-product-form">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target);
+              addProduct(formData);
+              e.target.reset();
+            }}
+            className="add-product-form"
+          >
             <TextField
               label="Product Name"
               name="name"
@@ -247,24 +242,27 @@ const AdminDashboard = () => {
               Add Product
             </Button>
           </form>
+          <MUIDataTable title="Products" data={products} columns={columns} options={options} />
 
-          <MUIDataTable title="Products" data={products} columns={columns} />
-
-          {/* Update Modal */}
+          {/* Edit Modal */}
           {showModal && selectedProduct && (
             <Modal open={showModal} onClose={() => setShowModal(false)}>
               <div className="modal-content">
                 <h3>Update Product</h3>
-                <form onSubmit={handleSubmitUpdate(updateProduct)}>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.target);
+                    updateProduct(selectedProduct._id, formData);
+                  }}
+                >
                   <TextField
                     label="Product Name"
                     name="name"
                     defaultValue={selectedProduct.name}
                     variant="outlined"
                     fullWidth
-                    {...registerUpdate('name')}
-                    error={!!updateErrors.name}
-                    helperText={updateErrors.name?.message}
+                    required
                   />
                   <TextField
                     label="Price"
@@ -273,9 +271,7 @@ const AdminDashboard = () => {
                     type="number"
                     variant="outlined"
                     fullWidth
-                    {...registerUpdate('price')}
-                    error={!!updateErrors.price}
-                    helperText={updateErrors.price?.message}
+                    required
                   />
                   <TextField
                     label="Category"
@@ -283,9 +279,7 @@ const AdminDashboard = () => {
                     defaultValue={selectedProduct.category}
                     variant="outlined"
                     fullWidth
-                    {...registerUpdate('category')}
-                    error={!!updateErrors.category}
-                    helperText={updateErrors.category?.message}
+                    required
                   />
                   <TextField
                     label="Details"
@@ -294,18 +288,9 @@ const AdminDashboard = () => {
                     variant="outlined"
                     fullWidth
                     multiline
-                    {...registerUpdate('details')}
-                    error={!!updateErrors.details}
-                    helperText={updateErrors.details?.message}
+                    required
                   />
-                  <input
-                    type="file"
-                    name="photos"
-                    multiple
-                    {...registerUpdate('photos')}
-                    className="file-input"
-                  />
-                  {updateErrors.photos && <p className="error-text">{updateErrors.photos.message}</p>}
+                  <input type="file" name="photos" multiple className="file-input" />
                   <div className="modal-buttons">
                     <Button type="submit" variant="contained" color="primary">
                       Save Changes
