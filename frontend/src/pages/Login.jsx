@@ -3,22 +3,34 @@ import { useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import axios from 'axios';
 import { auth } from './firebaseConfig';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import '../styles/logreg.css';
 
 const Login = () => {
-  const [formData, setFormData] = useState({ email: '', password: '' });
-  const [message, setMessage] = useState('');
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
+  // Validation schema using Yup
+  const schema = yup.object().shape({
+    email: yup.string().email('Invalid email address').required('Email is required'),
+    password: yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
+  });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // React Hook Form with Yup
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(schema),
+  });
+
+  const onSubmit = async (data) => {
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
       const token = await userCredential.user.getIdToken();
 
       // Send the token to your backend
@@ -26,34 +38,52 @@ const Login = () => {
 
       // Store the backend token in localStorage
       localStorage.setItem('token', response.data.token);
-      navigate('/dashboard');
+
+      // Show success notification
+      toast.success('Login successful! Redirecting...', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
+
+      // Redirect to dashboard after 3 seconds
+      setTimeout(() => navigate('/dashboard'), 3000);
     } catch (error) {
-      setMessage(error.message || 'Invalid email or password');
+      // Show error notification
+      toast.error(error.response?.data?.message || 'Invalid email or password', {
+        position: 'top-right',
+        autoClose: 5000,
+      });
     }
   };
 
   return (
     <div className="login-container">
+      <ToastContainer /> {/* Toastify container for notifications */}
       <div className="pulse-circle"></div>
       <div className="pulse-circle"></div>
       <div className="login-box">
         <h2>Login</h2>
-        {message && <p className="message">{message}</p>}
-        <form onSubmit={handleSubmit}>
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            onChange={handleChange}
-            className="input-field"
-          />
-          <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            onChange={handleChange}
-            className="input-field"
-          />
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="input-group">
+            <input
+              type="email"
+              name="email"
+              placeholder="Email"
+              {...register('email')}
+              className="input-field"
+            />
+            {errors.email && <span className="floating-error">{errors.email.message}</span>}
+          </div>
+          <div className="input-group">
+            <input
+              type="password"
+              name="password"
+              placeholder="Password"
+              {...register('password')}
+              className="input-field"
+            />
+            {errors.password && <span className="floating-error">{errors.password.message}</span>}
+          </div>
           <button type="submit" className="submit-btn">Login</button>
         </form>
       </div>

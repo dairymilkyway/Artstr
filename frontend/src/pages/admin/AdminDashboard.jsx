@@ -5,23 +5,21 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import IconButton from '@mui/material/IconButton';
 import { ThemeProvider, createTheme, Button, TextField, Modal } from '@mui/material';
-import Sidebar from './Sidebar'; // Adjust the relative path based on your project structure
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import Sidebar from './Sidebar';
 import '../../styles/AdminDashboard.css';
 
-// Custom theme to mimic Spotify design
 const theme = createTheme({
   palette: {
-    mode: 'dark', // Dark mode for a Spotify look
-    primary: {
-      main: '#1DB954', // Spotify green
-    },
-    secondary: {
-      main: '#191414', // Spotify dark background
-    },
+    mode: 'dark',
+    primary: { main: '#1DB954' },
+    secondary: { main: '#191414' },
   },
-  typography: {
-    fontFamily: 'Roboto, sans-serif',
-  },
+  typography: { fontFamily: 'Roboto, sans-serif' },
 });
 
 const AdminDashboard = () => {
@@ -30,9 +28,7 @@ const AdminDashboard = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
-  const getToken = () => {
-    return localStorage.getItem('token');
-  };
+  const getToken = () => localStorage.getItem('token');
 
   const fetchProducts = async () => {
     try {
@@ -42,6 +38,7 @@ const AdminDashboard = () => {
       setProducts(response.data);
     } catch (error) {
       console.error('Error fetching products:', error.response?.data?.message || error.message);
+      toast.error('Error fetching products', { position: 'top-right' });
     }
   };
 
@@ -57,12 +54,12 @@ const AdminDashboard = () => {
         { ids: idsToDelete },
         { headers: { Authorization: getToken() } }
       );
-      alert('Selected products deleted successfully');
+      toast.success('Selected products deleted successfully', { position: 'top-right' });
       fetchProducts();
       setSelectedRows([]);
-      window.location.reload(true);
     } catch (error) {
       console.error('Error deleting products:', error.response?.data?.message || error.message);
+      toast.error('Error deleting products', { position: 'top-right' });
     }
   };
 
@@ -71,29 +68,83 @@ const AdminDashboard = () => {
     setShowModal(true);
   };
 
-  const updateProduct = async (id, formData) => {
-    try {
-      await axios.put(`http://localhost:5000/api/products/${id}`, formData, {
-        headers: { Authorization: getToken() },
-      });
-      alert('Product updated successfully');
-      fetchProducts();
-      setShowModal(false);
-      window.location.reload(true);
-    } catch (error) {
-      console.error('Error updating product:', error.response?.data?.message || error.message);
-    }
-  };
+  // Yup schema for validation
+  const schema = yup.object().shape({
+    name: yup.string().required('Product Name is required'),
+    price: yup.number().positive('Price must be a positive number').required('Price is required'),
+    category: yup.string().required('Category is required'),
+    details: yup.string().required('Details are required'),
+    photos: yup
+      .mixed()
+      .test('fileType', 'Only image files are allowed', (value) => {
+        if (!value.length) return true; // No validation if no files are uploaded
+        return Array.from(value).every((file) => file.type.startsWith('image/'));
+      }),
+  });
 
-  const addProduct = async (formData) => {
+  // React Hook Form for Add Product
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm({
+    resolver: yupResolver(schema),
+  });
+
+  // React Hook Form for Update Product
+  const {
+    register: registerUpdate,
+    handleSubmit: handleSubmitUpdate,
+    formState: { errors: updateErrors },
+  } = useForm({
+    resolver: yupResolver(schema),
+    defaultValues: selectedProduct || {},
+  });
+
+  const addProduct = async (data) => {
     try {
+      const formData = new FormData();
+      Object.keys(data).forEach((key) => {
+        if (key === 'photos') {
+          Array.from(data[key]).forEach((file) => formData.append('photos', file));
+        } else {
+          formData.append(key, data[key]);
+        }
+      });
+
       await axios.post('http://localhost:5000/api/products', formData, {
         headers: { Authorization: getToken() },
       });
-      alert('Product added successfully');
+      toast.success('Product added successfully', { position: 'top-right' });
       fetchProducts();
+      reset();
     } catch (error) {
       console.error('Error adding product:', error.response?.data?.message || error.message);
+      toast.error('Error adding product', { position: 'top-right' });
+    }
+  };
+
+  const updateProduct = async (data) => {
+    try {
+      const formData = new FormData();
+      Object.keys(data).forEach((key) => {
+        if (key === 'photos') {
+          Array.from(data[key]).forEach((file) => formData.append('photos', file));
+        } else {
+          formData.append(key, data[key]);
+        }
+      });
+
+      await axios.put(`http://localhost:5000/api/products/${selectedProduct._id}`, formData, {
+        headers: { Authorization: getToken() },
+      });
+      toast.success('Product updated successfully', { position: 'top-right' });
+      fetchProducts();
+      setShowModal(false);
+    } catch (error) {
+      console.error('Error updating product:', error.response?.data?.message || error.message);
+      toast.error('Error updating product', { position: 'top-right' });
     }
   };
 
@@ -126,103 +177,146 @@ const AdminDashboard = () => {
       options: {
         customBodyRender: (value, tableMeta) => {
           const rowIndex = tableMeta.rowIndex;
-          const product = products[rowIndex];
-
           return (
-            <div>
-              <IconButton onClick={() => handleOpenModal(rowIndex)}>
-                <EditIcon style={{ color: '#2196F3' }} />
-              </IconButton>
-            </div>
+            <IconButton onClick={() => handleOpenModal(rowIndex)}>
+              <EditIcon style={{ color: '#2196F3' }} />
+            </IconButton>
           );
         },
       },
     },
   ];
 
-  const options = {
-    selectableRows: 'multiple',
-    onRowsSelect: (currentRowsSelected, allRowsSelected) => {
-      const selectedRowIndexes = allRowsSelected.map((row) => row.index);
-      setSelectedRows(selectedRowIndexes);
-    },
-    customToolbarSelect: () => (
-      <IconButton onClick={handleDeleteSelected}>
-        <DeleteIcon style={{ color: '#f44336' }} />
-      </IconButton>
-    ),
-    expandableRows: true,
-    renderExpandableRow: (rowData, rowMeta) => {
-      const rowIndex = rowMeta.dataIndex;
-      const product = products[rowIndex];
-
-      return (
-        <tr>
-          <td colSpan={columns.length + 1}>
-            <div className="expandable-row">
-              <p><strong>Name:</strong> {product.name}</p>
-              <p><strong>Price:</strong> ${product.price}</p>
-              <p><strong>Category:</strong> {product.category}</p>
-              <p><strong>Details:</strong> {product.details}</p>
-              <div>
-                <strong>Photos:</strong>
-                <div>
-                  {product.photos.map((url, index) => (
-                    <img key={index} src={url} alt="Product" className="expandable-photo" />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </td>
-        </tr>
-      );
-    },
-  };
-
   return (
     <ThemeProvider theme={theme}>
+      <ToastContainer />
       <div style={{ display: 'flex' }}>
-        <Sidebar /> {/* Include Sidebar */}
+        <Sidebar />
         <div className="admin-dashboard">
           <h1 className="title">Admin Dashboard</h1>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.target);
-              addProduct(formData);
-              e.target.reset();
-            }}
-            className="add-product-form"
-          >
-            <TextField label="Product Name" name="name" variant="outlined" fullWidth required />
-            <TextField label="Price" name="price" type="number" variant="outlined" fullWidth required />
-            <TextField label="Category" name="category" variant="outlined" fullWidth required />
-            <TextField label="Details" name="details" variant="outlined" fullWidth multiline required />
-            <input type="file" name="photos" multiple className="file-input" />
-            <Button type="submit" variant="contained" color="primary" className="submit-button">Add Product</Button>
+
+          {/* Add Product Form */}
+          <form onSubmit={handleSubmit(addProduct)} className="add-product-form">
+            <TextField
+              label="Product Name"
+              name="name"
+              variant="outlined"
+              fullWidth
+              {...register('name')}
+              error={!!errors.name}
+              helperText={errors.name?.message}
+            />
+            <TextField
+              label="Price"
+              name="price"
+              type="number"
+              variant="outlined"
+              fullWidth
+              {...register('price')}
+              error={!!errors.price}
+              helperText={errors.price?.message}
+            />
+            <TextField
+              label="Category"
+              name="category"
+              variant="outlined"
+              fullWidth
+              {...register('category')}
+              error={!!errors.category}
+              helperText={errors.category?.message}
+            />
+            <TextField
+              label="Details"
+              name="details"
+              variant="outlined"
+              fullWidth
+              multiline
+              {...register('details')}
+              error={!!errors.details}
+              helperText={errors.details?.message}
+            />
+            <input
+              type="file"
+              name="photos"
+              multiple
+              {...register('photos')}
+              className="file-input"
+            />
+            {errors.photos && <p className="error-text">{errors.photos.message}</p>}
+            <Button type="submit" variant="contained" color="primary" className="submit-button">
+              Add Product
+            </Button>
           </form>
-          <MUIDataTable title="Products" data={products} columns={columns} options={options} />
+
+          <MUIDataTable title="Products" data={products} columns={columns} />
 
           {/* Update Modal */}
           {showModal && selectedProduct && (
             <Modal open={showModal} onClose={() => setShowModal(false)}>
               <div className="modal-content">
                 <h3>Update Product</h3>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const formData = new FormData(e.target);
-                    updateProduct(selectedProduct._id, formData);
-                  }}
-                >
-                  <TextField label="Product Name" name="name" defaultValue={selectedProduct.name} variant="outlined" fullWidth required />
-                  <TextField label="Price" name="price" defaultValue={selectedProduct.price} type="number" variant="outlined" fullWidth required />
-                  <TextField label="Category" name="category" defaultValue={selectedProduct.category} variant="outlined" fullWidth required />
-                  <TextField label="Details" name="details" defaultValue={selectedProduct.details} variant="outlined" fullWidth multiline required />
-                  <input type="file" name="photos" multiple className="file-input" />
+                <form onSubmit={handleSubmitUpdate(updateProduct)}>
+                  <TextField
+                    label="Product Name"
+                    name="name"
+                    defaultValue={selectedProduct.name}
+                    variant="outlined"
+                    fullWidth
+                    {...registerUpdate('name')}
+                    error={!!updateErrors.name}
+                    helperText={updateErrors.name?.message}
+                  />
+                  <TextField
+                    label="Price"
+                    name="price"
+                    defaultValue={selectedProduct.price}
+                    type="number"
+                    variant="outlined"
+                    fullWidth
+                    {...registerUpdate('price')}
+                    error={!!updateErrors.price}
+                    helperText={updateErrors.price?.message}
+                  />
+                  <TextField
+                    label="Category"
+                    name="category"
+                    defaultValue={selectedProduct.category}
+                    variant="outlined"
+                    fullWidth
+                    {...registerUpdate('category')}
+                    error={!!updateErrors.category}
+                    helperText={updateErrors.category?.message}
+                  />
+                  <TextField
+                    label="Details"
+                    name="details"
+                    defaultValue={selectedProduct.details}
+                    variant="outlined"
+                    fullWidth
+                    multiline
+                    {...registerUpdate('details')}
+                    error={!!updateErrors.details}
+                    helperText={updateErrors.details?.message}
+                  />
+                  <input
+                    type="file"
+                    name="photos"
+                    multiple
+                    {...registerUpdate('photos')}
+                    className="file-input"
+                  />
+                  {updateErrors.photos && <p className="error-text">{updateErrors.photos.message}</p>}
                   <div className="modal-buttons">
-                    <Button type="submit" variant="contained" color="primary">Save Changes</Button>
-                    <Button variant="contained" color="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
+                    <Button type="submit" variant="contained" color="primary">
+                      Save Changes
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      onClick={() => setShowModal(false)}
+                    >
+                      Cancel
+                    </Button>
                   </div>
                 </form>
               </div>

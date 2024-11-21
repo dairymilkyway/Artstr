@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "@hookform/resolvers": "^3.9.1",
+    "formik": "^2.4.6",
+    "react-hook-form": "^7.53.2",
+    "react-toastify": "^10.0.6",
+    "yup": "^1.4.0"
+  }
+}
