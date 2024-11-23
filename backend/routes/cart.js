@@ -5,7 +5,7 @@ const Product = require('../models/Product');
 const authMiddleware = require('../middleware/authMiddleware');
 
 const getOrCreateCart = async (userId) => {
-  let cart = await Cart.findOne({ user: userId }).populate('items.product');
+  let cart = await Cart.findOne({ user: userId }).populate('items.product'); // Populate the product field
   if (!cart) {
     cart = new Cart({ user: userId, items: [] });
     await cart.save();
@@ -13,11 +13,11 @@ const getOrCreateCart = async (userId) => {
   return cart;
 };
 
+
 const updateCartTotalPrice = async (cart) => {
   try {
-    // Calculate totalPrice by iterating over all cart items
+    // Calculate the total price
     cart.totalPrice = cart.items.reduce((total, item) => {
-      // Check if item.product and item.product.price exist
       if (!item.product || typeof item.product.price !== 'number') {
         console.error('Invalid product or price in cart item:', item);
         return total; // Skip invalid items
