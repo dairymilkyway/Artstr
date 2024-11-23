@@ -5,7 +5,6 @@ import {
   Button,
   Typography,
   Avatar,
-  Grid,
   CircularProgress,
 } from '@mui/material';
 import { toast, ToastContainer } from 'react-toastify';
@@ -14,14 +13,19 @@ import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
 import axios from 'axios';
+import Navbar from '../components/Navbar';
 
 const getToken = () => localStorage.getItem('token');
 
 // Validation schema
 const profileValidationSchema = Yup.object().shape({
   email: Yup.string().email('Invalid email').required('Email is required'),
-  mobileNumber: Yup.string().matches(/^[0-9]{10}$/, 'Mobile number must be 10 digits').required('Mobile number is required'),
-  password: Yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
+  mobileNumber: Yup.string()
+    .matches(/^[0-9]{10}$/, 'Mobile number must be 10 digits')
+    .required('Mobile number is required'),
+  password: Yup.string()
+    .min(6, 'Password must be at least 6 characters')
+    .required('Password is required'),
 });
 
 const UserProfile = () => {
@@ -30,7 +34,6 @@ const UserProfile = () => {
   const [isProfileUpdating, setIsProfileUpdating] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
 
-  // Profile update form
   const {
     control,
     handleSubmit,
@@ -45,7 +48,6 @@ const UserProfile = () => {
     },
   });
 
-  // Fetch user data
   const fetchUserData = async () => {
     try {
       const response = await axios.get('http://localhost:5000/api/users/profile', {
@@ -77,9 +79,8 @@ const UserProfile = () => {
 
   const handleProfileUpdate = async (data) => {
     setIsProfileUpdating(true);
-
+  
     try {
-      // Prepare data for the backend
       const formData = new FormData();
       Object.entries(data).forEach(([key, value]) => {
         if (value) formData.append(key, value);
@@ -87,24 +88,28 @@ const UserProfile = () => {
       if (profilePicture) {
         formData.append('profilePicture', profilePicture);
       }
-
-      // Send update request to the backend
+  
       const response = await axios.put('http://localhost:5000/api/users/update-profile', formData, {
         headers: {
           Authorization: `Bearer ${getToken()}`,
           'Content-Type': 'multipart/form-data',
         },
       });
-
-      toast.success('Profile updated successfully');
+  
+      toast.success('Profile updated successfully!', {
+        onClose: () => {
+          window.location.reload(); // Refresh the page after the toast is closed
+        },
+      });
+  
       setProfilePicturePreview(response.data.user.profilePicture);
     } catch (error) {
-      console.error('Error updating profile:', error.message);
       toast.error('Failed to update profile. Please try again.');
     } finally {
       setIsProfileUpdating(false);
     }
   };
+  
 
   useEffect(() => {
     fetchUserData();
@@ -119,86 +124,153 @@ const UserProfile = () => {
   }
 
   return (
-    <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4, p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
-      <ToastContainer position="top-right" />
-      <Typography variant="h5" gutterBottom>
-        Update Profile
-      </Typography>
+    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <ToastContainer position="top-right" autoClose={3000} />
+      {/* Sticky Navbar */}
+      <Box sx={{ position: 'sticky', top: 0, zIndex: 1 }}>
+        <Navbar />
+      </Box>
 
-      {/* Profile Update Form */}
-      <form onSubmit={handleSubmit(handleProfileUpdate)}>
-        <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
-          <Grid item>
-            <Avatar
-              src={profilePicturePreview}
-              sx={{ width: 80, height: 80 }}
-            />
-          </Grid>
-          <Grid item>
-            <Button variant="contained" component="label">
-              Upload Picture
-              <input
-                type="file"
-                hidden
-                onChange={handleFileChange}
-                accept="image/*"
-              />
-            </Button>
-          </Grid>
-        </Grid>
-        <Controller
-          name="email"
-          control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              label="Email"
-              fullWidth
-              margin="normal"
-              error={!!errors.email}
-              helperText={errors.email?.message}
-            />
-          )}
-        />
-        <Controller
-          name="mobileNumber"
-          control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              label="Mobile Number"
-              fullWidth
-              margin="normal"
-              error={!!errors.mobileNumber}
-              helperText={errors.mobileNumber?.message}
-            />
-          )}
-        />
-        <Controller
-          name="password"
-          control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              label="Password"
-              type="password"
-              fullWidth
-              margin="normal"
-              error={!!errors.password}
-              helperText={errors.password?.message}
-            />
-          )}
-        />
-        <Button
-          type="submit"
-          variant="contained"
-          color="primary"
-          disabled={isProfileUpdating}
-          sx={{ mt: 3 }}
+      {/* Scrollable Content */}
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: 'auto',
+          py: 4,
+          px: 2,
+          backgroundColor: 'transparent',
+        }}
+      >
+        <Box
+          sx={{
+            maxWidth: 600,
+            mx: 'auto',
+            p: 3,
+            background: '#181413',
+            borderRadius: 2,
+            boxShadow: 3,
+            color: 'white',
+          }}
         >
-          {isProfileUpdating ? <CircularProgress size={24} /> : 'Update Details'}
-        </Button>
-      </form>
+          <Typography variant="h4" component="h1" gutterBottom sx={{ color: 'white' }}>
+            Profile Settings
+          </Typography>
+
+          <form onSubmit={handleSubmit(handleProfileUpdate)}>
+            <Box sx={{ mb: 3, textAlign: 'center' }}>
+              <Avatar
+                src={profilePicturePreview}
+                sx={{ width: 120, height: 120, mx: 'auto', mb: 2 }}
+              />
+              <Button
+                variant="outlined"
+                component="label"
+                sx={{
+                  textTransform: 'none',
+                  color: 'white',
+                  borderColor: '#1db954',
+                  '&:hover': {
+                    borderColor: '#1db954',
+                    backgroundColor: 'rgba(29, 185, 84, 0.1)',
+                  },
+                }}
+              >
+                Upload Profile Picture
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={handleFileChange}
+                />
+              </Button>
+            </Box>
+
+            <Controller
+              name="email"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  fullWidth
+                  label="Email"
+                  error={!!errors.email}
+                  helperText={errors.email?.message}
+                  {...field}
+                  margin="normal"
+                  sx={{
+                    '& .MuiInputBase-root': { color: 'white' },
+                    '& .MuiFormLabel-root': { color: 'white' },
+                    '& .MuiFormHelperText-root': { color: '#d4d4d4' },
+                  }}
+                />
+              )}
+            />
+
+            <Controller
+              name="mobileNumber"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  fullWidth
+                  label="Mobile Number"
+                  error={!!errors.mobileNumber}
+                  helperText={errors.mobileNumber?.message}
+                  {...field}
+                  margin="normal"
+                  sx={{
+                    '& .MuiInputBase-root': { color: 'white' },
+                    '& .MuiFormLabel-root': { color: 'white' },
+                    '& .MuiFormHelperText-root': { color: '#d4d4d4' },
+                  }}
+                />
+              )}
+            />
+
+            <Controller
+              name="password"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  fullWidth
+                  label="Password"
+                  type="password"
+                  error={!!errors.password}
+                  helperText={errors.password?.message}
+                  {...field}
+                  margin="normal"
+                  sx={{
+                    '& .MuiInputBase-root': { color: 'white' },
+                    '& .MuiFormLabel-root': { color: 'white' },
+                    '& .MuiFormHelperText-root': { color: '#d4d4d4' },
+                  }}
+                />
+              )}
+            />
+
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              disabled={isProfileUpdating}
+              sx={{
+                mt: 4,
+                mb: 2,
+                py: 1.5,
+                borderRadius: 2,
+                fontSize: '1.1rem',
+                textTransform: 'none',
+                backgroundColor: '#1db954',
+                color: 'white',
+                boxShadow: 2,
+                '&:hover': {
+                  backgroundColor: '#1ed760',
+                },
+              }}
+            >
+              {isProfileUpdating ? <CircularProgress size={24} color="inherit" /> : 'Update Details'}
+            </Button>
+          </form>
+        </Box>
+      </Box>
     </Box>
   );
 };

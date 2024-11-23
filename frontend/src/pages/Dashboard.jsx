@@ -40,6 +40,21 @@ const Dashboard = () => {
     }
   };
 
+
+  const addToCart = async (productId, quantity) => {
+    try {
+      const response = await axios.post(
+        'http://localhost:5000/api/cart/add',
+        { productId, quantity },
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
+      toast.success('Item added to cart', { position: 'top-right' });
+    } catch (error) {
+      toast.error('Failed to add item to cart', { position: 'top-right' });
+      console.error(error);
+    }
+  };
+
   useEffect(() => {
     fetchProducts(page);
   }, [page]);
@@ -47,15 +62,6 @@ const Dashboard = () => {
   const fetchMoreData = () => {
     setPage((prevPage) => prevPage + 1);
   };
-
-  useEffect(() => {
-    fetchProducts();
-
-    // Check for message in location state and show toast
-    if (location.state?.message) {
-      toast.success(location.state.message, { position: 'top-right' });
-    }
-  }, [location.state]);
 
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -90,7 +96,7 @@ const Dashboard = () => {
           <Grid container spacing={3}>
             {products.map((product) => (
               <Grid item key={product.id} xs={12} sm={6} md={4} lg={3}>
-                <ProductCard product={product} />
+                <ProductCard product={product} onAddToCart={() => addToCart(product._id, 1)} />
               </Grid>
             ))}
           </Grid>
