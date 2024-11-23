@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Container, Typography, CircularProgress, Grid, Alert, Box, Button } from '@mui/material';
+import { CircularProgress, Grid, Alert, Box } from '@mui/material';
+import { useLocation } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import Navbar from '../components/Navbar';
 import { toast, ToastContainer } from 'react-toastify';
@@ -10,6 +11,7 @@ const Dashboard = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const location = useLocation();
 
   const getToken = () => {
     return localStorage.getItem('token');
@@ -20,7 +22,7 @@ const Dashboard = () => {
     try {
       const response = await axios.get('http://localhost:5000/api/products', {
         headers: {
-          Authorization: getToken(),
+          Authorization: `Bearer ${getToken()}`,
         },
       });
       setProducts(response.data);
@@ -32,10 +34,6 @@ const Dashboard = () => {
     }
   };
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
   const addToCart = async (productId, quantity) => {
     try {
       const response = await axios.post(
@@ -43,12 +41,21 @@ const Dashboard = () => {
         { productId, quantity },
         { headers: { Authorization: `Bearer ${getToken()}` } }
       );
-      toast.success('Item added to cart');
+      toast.success('Item added to cart', { position: 'top-right' });
     } catch (error) {
-      toast.error('Failed to add item to cart');
+      toast.error('Failed to add item to cart', { position: 'top-right' });
       console.error(error);
     }
   };
+
+  useEffect(() => {
+    fetchProducts();
+
+    // Check for message in location state and show toast
+    if (location.state?.message) {
+      toast.success(location.state.message, { position: 'top-right' });
+    }
+  }, [location.state]);
 
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -63,7 +70,6 @@ const Dashboard = () => {
         padding: 3
       }}>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center' }}>
             <CircularProgress />

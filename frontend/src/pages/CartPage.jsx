@@ -14,6 +14,7 @@ import {
   Alert,
   Container,
   Pagination,
+  Checkbox,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -29,6 +30,7 @@ const CartPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1); // Pagination state
+  const [selectedItems, setSelectedItems] = useState([]);
   const itemsPerPage = 5; // Display 5 items per page
   const token = localStorage.getItem('token');
 
@@ -72,6 +74,7 @@ const CartPage = () => {
   const removeItem = async (productId) => {
     setLoading(true);
     setError(null);
+
     try {
       const response = await axios.delete(`http://localhost:5000/api/cart/remove/${productId}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -83,6 +86,21 @@ const CartPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSelectItem = (productId) => {
+    setSelectedItems((prevSelectedItems) =>
+      prevSelectedItems.includes(productId)
+        ? prevSelectedItems.filter((id) => id !== productId)
+        : [...prevSelectedItems, productId]
+    );
+  };
+
+  const handleCheckout = () => {
+    const itemsToCheckout = cart.items.filter((item) =>
+      selectedItems.includes(item.product._id)
+    );
+    navigate('/checkout', { state: { items: itemsToCheckout } });
   };
 
   useEffect(() => {
@@ -97,6 +115,12 @@ const CartPage = () => {
   const handlePageChange = (event, value) => {
     setCurrentPage(value);
   };
+
+  // Calculate total price of selected items
+  const totalPrice = selectedItems.reduce((total, productId) => {
+    const item = cart.items.find((item) => item.product._id === productId);
+    return total + (item ? item.quantity * item.product.price : 0);
+  }, 0);
 
   return (
     <Box
@@ -154,6 +178,12 @@ const CartPage = () => {
                       p: 2,
                     }}
                   >
+                    <Checkbox
+                      checked={selectedItems.includes(item.product._id)}
+                      onChange={() => handleSelectItem(item.product._id)}
+                      sx={{ color: '#1DB954' }}
+                    />
+
                     {/* Product Image */}
                     <Box
                       component="img"
@@ -178,14 +208,14 @@ const CartPage = () => {
                       secondary={`Quantity: ${item.quantity} / Stock: ${item.product.stocks}`}
                       primaryTypographyProps={{
                         color: '#fff',
-                        fontWeight: 'bold',
-                        fontSize: '1.1rem',
                       }}
-                      secondaryTypographyProps={{ color: '#b3b3b3' }}
+                      secondaryTypographyProps={{
+                        color: '#fff',
+                      }}
                     />
 
-                    {/* Action Buttons */}
-                    <Stack direction="row" spacing={1} alignItems="center">
+                    {/* Quantity Controls */}
+                    <Stack direction="row" spacing={1}>
                       <IconButton
                         aria-label="Decrease quantity"
                         onClick={() =>
@@ -246,46 +276,44 @@ const CartPage = () => {
                 color="primary"
               />
             </Box>
+
+            {/* Total Price */}
+            <Typography
+              variant="h6"
+              sx={{
+                textAlign: 'right',
+                color: '#fff',
+                fontWeight: 'bold',
+                mt: 2,
+              }}
+            >
+              Total Price: ${totalPrice.toFixed(2)}
+            </Typography>
+
+            {/* Checkout Button */}
+            <Box sx={{ textAlign: 'center', mb: 2 }}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleCheckout}
+                disabled={selectedItems.length === 0}
+                sx={{
+                  bgcolor: '#1DB954',
+                  '&:hover': { bgcolor: '#1ed760' },
+                  textTransform: 'none',
+                  fontSize: '1.2rem',
+                  px: 4,
+                }}
+              >
+                Checkout
+              </Button>
+            </Box>
           </>
         ) : (
           <Typography variant="body1" sx={{ mt: 4 }}>
             Your cart is empty.
           </Typography>
         )}
-
-        <Divider sx={{ my: 2 }} />
-
-        {/* Total Price */}
-        {cart?.totalPrice && (
-          <Typography
-            variant="h6"
-            sx={{
-              textAlign: 'right',
-              color: '#fff',
-              fontWeight: 'bold',
-              mt: 2,
-            }}
-          >
-            Total Price: ${cart.totalPrice.toFixed(2)}
-          </Typography>
-        )}
-
-        <Box sx={{ textAlign: 'center', mb: 2 }}>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => navigate('/checkout')}
-            sx={{
-              bgcolor: '#1DB954',
-              '&:hover': { bgcolor: '#1ed760' },
-              textTransform: 'none',
-              fontSize: '1.2rem',
-              px: 4,
-            }}
-          >
-            Checkout
-          </Button>
-        </Box>
       </Container>
     </Box>
   );

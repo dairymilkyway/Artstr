@@ -135,17 +135,22 @@ const Navbar = () => {
               Orders
             </Button>
             <IconButton
-              color="inherit"
-              onClick={() => navigate('/cart')}
-              sx={commonButtonStyles}
-            >
-              <Badge
-                badgeContent={location.pathname === '/cart' ? 0 : cartItemsCount} // Remove badge count on /cart
-                color="error"
-              >
-                <ShoppingCartIcon />
-              </Badge>
-            </IconButton>
+  color="inherit"
+  onClick={() => navigate('/cart')}
+  sx={commonButtonStyles}
+>
+  <Badge
+    badgeContent={
+      location.pathname === '/cart' || location.pathname === '/checkout'
+        ? 0 // No badge count on '/cart' or '/checkout'
+        : cartItemsCount
+    }
+    color="error"
+  >
+    <ShoppingCartIcon />
+  </Badge>
+</IconButton>
+
             {/* Profile Picture */}
             <IconButton onClick={() => navigate('/profile')} sx={{ padding: 0 }}>
               <Avatar

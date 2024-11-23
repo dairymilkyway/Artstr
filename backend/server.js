@@ -7,6 +7,7 @@ const path = require('path');
 // Routes
 const salesRoutes = require('./routes/sales');
 const authRoutes = require('./routes/auth');
+const orderRoutes = require('./routes/orders');
 const productRoutes = require('./routes/product');
 const cartRouter = require('./routes/cart');
 const userRoutes = require('./routes/user'); // Import the user routes
@@ -33,6 +34,7 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
+app.use('/api/orders', orderRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/cart', cartRouter);

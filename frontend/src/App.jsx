@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import UserProfile from './pages/UserProfile';
 import CartPage from './pages/CartPage';
+import CheckoutPage from './pages/CheckoutPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import SalesChart from './pages/admin/SalesChart'; // Import the new SalesChart page
 import ProtectedRoute from './ProtectedRoute';
@@ -24,6 +25,14 @@ const App = () => {
             element={
               <ProtectedRoute userType="user">
                 <UserProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/checkout"
+            element={
+              <ProtectedRoute userType="user">
+                <CheckoutPage />
               </ProtectedRoute>
             }
           />
