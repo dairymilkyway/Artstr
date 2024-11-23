@@ -21,6 +21,10 @@ const Navbar = () => {
     navigate('/login');
   };
 
+  const handleTitleClick = () => {
+    navigate('/dashboard');
+  };
+
   const fetchCartItemsCount = async () => {
     try {
       const response = await axios.get('http://localhost:5000/api/cart', {
@@ -80,7 +84,18 @@ const Navbar = () => {
           }}
         >
           {/* Left Section */}
-          <Box display="flex" alignItems="center">
+          <Box
+            display="flex"
+            alignItems="center"
+            onClick={handleTitleClick}
+            sx={{
+              cursor: 'pointer',
+              '&:hover': {
+                opacity: 0.8
+              },
+              transition: 'opacity 0.2s'
+            }}
+          >
             <img src={logo} alt="Logo" style={{ height: 50, marginRight: 12 }} />
             <Typography
               variant="h6"

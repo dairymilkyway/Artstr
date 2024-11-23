@@ -5,11 +5,26 @@ const upload = require('../utils/multerConfig');
 
 const router = express.Router();
 
-// Get all products
+// Get all products with pagination
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const products = await Product.find();
-    res.json(products);
+    const page = parseInt(req.query.page) || 1; // Default to page 1
+    const limit = parseInt(req.query.limit) || 10; // Default to 10 products per page
+    const skip = (page - 1) * limit;
+
+    const totalProducts = await Product.countDocuments(); // Total number of products
+    const totalPages = Math.ceil(totalProducts / limit);
+
+    const products = await Product.find()
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 }); // Sort by newest first
+
+    res.json({ 
+      products, 
+      currentPage: page, 
+      totalPages 
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -54,7 +69,6 @@ router.put('/:id', authMiddleware, upload.array('photos', 10), async (req, res) 
     res.status(500).json({ message: 'Server error' });
   }
 });
-
 
 // Delete a product
 router.delete('/:id', authMiddleware, async (req, res) => {
