@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { signInWithPopup } from 'firebase/auth';
 import axios from 'axios';
 import { auth, googleProvider } from './firebaseConfig';
 import { useForm } from 'react-hook-form';
@@ -11,6 +11,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import '../styles/logreg.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGoogle } from '@fortawesome/free-brands-svg-icons';
+
 const Login = () => {
   const navigate = useNavigate();
 
@@ -77,6 +78,9 @@ const Login = () => {
       // Redirect to dashboard after 3 seconds
       setTimeout(() => navigate('/dashboard'), 3000);
     } catch (error) {
+      // Log the error message for debugging
+      console.error('Google login error:', error);
+
       // Show error notification
       toast.error(error.response?.data?.message || 'Google login failed', {
         position: 'top-right',
@@ -118,10 +122,9 @@ const Login = () => {
           <button type="submit" className="submit-btn">Login</button>
         </form>
         <button onClick={handleGoogleLogin} className="google-login-btn">
-  <FontAwesomeIcon icon={faGoogle} className="google-icon" />
-  Login with Google
-</button>
-
+          <FontAwesomeIcon icon={faGoogle} className="google-icon" />
+          Login with Google
+        </button>
       </div>
     </div>
   );

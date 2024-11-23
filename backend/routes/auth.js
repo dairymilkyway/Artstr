@@ -73,13 +73,28 @@ router.post('/login', async (req, res) => {
   const { token } = req.body;
 
   try {
+    console.log('Received token:', token); // Log the received token
+
     // Verify the Firebase ID token
     const decodedToken = await admin.auth().verifyIdToken(token);
+    console.log('Decoded token:', decodedToken); // Log the decoded token
+
     const email = decodedToken.email;
 
     // Find user by email
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: 'Invalid email or password' });
+    let user = await User.findOne({ email });
+    if (!user) {
+      // If user does not exist, create a new user
+      user = new User({
+        email,
+        mobileNumber: 'N/A', // Provide a default value for mobileNumber
+        password: 'N/A', // Provide a default value for password
+        userType: 'user', // Default user type
+        profilePicture: decodedToken.picture || 'default-profile.png',
+      });
+      await user.save();
+      console.log('New user created:', user);
+    }
 
     // Generate JWT token with userType
     const jwtToken = jwt.sign(
@@ -90,7 +105,9 @@ router.post('/login', async (req, res) => {
 
     res.json({ token: jwtToken });
   } catch (error) {
+    // Log the error message for debugging
     console.error('Error during login:', error);
+
     res.status(500).json({ message: 'Server error' });
   }
 });

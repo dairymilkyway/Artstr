@@ -3,8 +3,8 @@ const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
-  mobileNumber: { type: String, required: true },
-  password: { type: String, required: true },
+  mobileNumber: { type: String, required: false }, // Make mobileNumber optional
+  password: { type: String, required: false }, // Make password optional
   userType: { type: String, default: 'user' },
   profilePicture: { 
     type: String, 
@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema({
 
 // Hash password before saving
 userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+  if (!this.isModified('password') || !this.password) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
