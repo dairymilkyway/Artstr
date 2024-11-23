@@ -226,3 +226,26 @@ body {
   box-shadow: 0 0 8px rgba(29, 185, 84, 0.6); /* Subtle green glow */
   outline: none;
 }
+.google-login-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px; /* Space between icon and text */
+  padding: 10px 20px;
+  background-color: #4285F4;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.google-login-btn:hover {
+  background-color: #357ae8;
+}
+
+.google-icon {
+  font-size: 20px;
+}

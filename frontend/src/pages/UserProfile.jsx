@@ -19,10 +19,9 @@ const getToken = () => localStorage.getItem('token');
 
 // Validation schema
 const profileValidationSchema = Yup.object().shape({
-  firstName: Yup.string().required('First name is required').min(2, 'Too short'),
-  lastName: Yup.string().required('Last name is required').min(2, 'Too short'),
   email: Yup.string().email('Invalid email').required('Email is required'),
-  username: Yup.string().required('Username is required').min(3, 'Too short'),
+  mobileNumber: Yup.string().matches(/^[0-9]{10}$/, 'Mobile number must be 10 digits').required('Mobile number is required'),
+  password: Yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
 });
 
 const UserProfile = () => {
@@ -40,10 +39,9 @@ const UserProfile = () => {
   } = useForm({
     resolver: yupResolver(profileValidationSchema),
     defaultValues: {
-      firstName: '',
-      lastName: '',
       email: '',
-      username: '',
+      mobileNumber: '',
+      password: '',
     },
   });
 
@@ -55,15 +53,9 @@ const UserProfile = () => {
       });
       const user = response.data.user;
 
-      setValue('firstName', user.firstName || '');
-      setValue('lastName', user.lastName || '');
       setValue('email', user.email || '');
-      setValue('username', user.username || '');
-      setProfilePicturePreview(
-        user.profilePicture === 'default-profile.png'
-          ? '/default-profile.png'
-          : user.profilePicture
-      );
+      setValue('mobileNumber', user.mobileNumber || '');
+      setProfilePicturePreview(user.profilePicture || '/default-profile.png');
     } catch (error) {
       toast.error('Error fetching user data');
     } finally {
@@ -155,34 +147,6 @@ const UserProfile = () => {
           </Grid>
         </Grid>
         <Controller
-          name="firstName"
-          control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              label="First Name"
-              fullWidth
-              margin="normal"
-              error={!!errors.firstName}
-              helperText={errors.firstName?.message}
-            />
-          )}
-        />
-        <Controller
-          name="lastName"
-          control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              label="Last Name"
-              fullWidth
-              margin="normal"
-              error={!!errors.lastName}
-              helperText={errors.lastName?.message}
-            />
-          )}
-        />
-        <Controller
           name="email"
           control={control}
           render={({ field }) => (
@@ -197,16 +161,31 @@ const UserProfile = () => {
           )}
         />
         <Controller
-          name="username"
+          name="mobileNumber"
           control={control}
           render={({ field }) => (
             <TextField
               {...field}
-              label="Username"
+              label="Mobile Number"
               fullWidth
               margin="normal"
-              error={!!errors.username}
-              helperText={errors.username?.message}
+              error={!!errors.mobileNumber}
+              helperText={errors.mobileNumber?.message}
+            />
+          )}
+        />
+        <Controller
+          name="password"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="Password"
+              type="password"
+              fullWidth
+              margin="normal"
+              error={!!errors.password}
+              helperText={errors.password?.message}
             />
           )}
         />

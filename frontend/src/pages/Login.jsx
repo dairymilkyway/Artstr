@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import axios from 'axios';
-import { auth } from './firebaseConfig';
+import { auth, googleProvider } from './firebaseConfig';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import '../styles/logreg.css';
-
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faGoogle } from '@fortawesome/free-brands-svg-icons';
 const Login = () => {
   const navigate = useNavigate();
 
@@ -56,11 +57,41 @@ const Login = () => {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const token = await result.user.getIdToken();
+
+      // Send the token to your backend
+      const response = await axios.post('http://localhost:5000/api/auth/login', { token });
+
+      // Store the backend token in localStorage
+      localStorage.setItem('token', response.data.token);
+
+      // Show success notification
+      toast.success('Login successful! Redirecting...', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
+
+      // Redirect to dashboard after 3 seconds
+      setTimeout(() => navigate('/dashboard'), 3000);
+    } catch (error) {
+      // Show error notification
+      toast.error(error.response?.data?.message || 'Google login failed', {
+        position: 'top-right',
+        autoClose: 5000,
+      });
+    }
+  };
+
   return (
     <div className="login-container">
       <ToastContainer /> {/* Toastify container for notifications */}
       <div className="pulse-circle"></div>
       <div className="pulse-circle"></div>
+      <div className="pulse-circle"></div>
+
       <div className="login-box">
         <h2>Login</h2>
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -86,6 +117,11 @@ const Login = () => {
           </div>
           <button type="submit" className="submit-btn">Login</button>
         </form>
+        <button onClick={handleGoogleLogin} className="google-login-btn">
+  <FontAwesomeIcon icon={faGoogle} className="google-icon" />
+  Login with Google
+</button>
+
       </div>
     </div>
   );

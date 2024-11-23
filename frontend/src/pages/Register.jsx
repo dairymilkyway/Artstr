@@ -12,13 +12,12 @@ import '../styles/logreg.css';
 
 const Register = () => {
   const navigate = useNavigate();
+  const [profilePicture, setProfilePicture] = useState(null);
 
   // Validation schema using Yup
   const schema = yup.object().shape({
-    firstName: yup.string().required('First Name is required'),
-    lastName: yup.string().required('Last Name is required'),
     email: yup.string().email('Invalid email address').required('Email is required'),
-    username: yup.string().min(4, 'Username must be at least 4 characters').required('Username is required'),
+    mobileNumber: yup.string().matches(/^[0-9]{10}$/, 'Mobile number must be 10 digits').required('Mobile number is required'),
     password: yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
   });
 
@@ -36,13 +35,21 @@ const Register = () => {
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       const token = await userCredential.user.getIdToken();
 
-      // Send the token and user data to your backend
-      const response = await axios.post('http://localhost:5000/api/auth/register', {
-        token,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        username: data.username,
-        password: data.password,
+      // Prepare form data
+      const formData = new FormData();
+      formData.append('token', token);
+      formData.append('email', data.email);
+      formData.append('mobileNumber', data.mobileNumber);
+      formData.append('password', data.password);
+      if (profilePicture) {
+        formData.append('profilePicture', profilePicture);
+      }
+
+      // Send the form data to your backend
+      const response = await axios.post('http://localhost:5000/api/auth/register', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
       // Show success notification
@@ -62,6 +69,13 @@ const Register = () => {
     }
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfilePicture(file);
+    }
+  };
+
   return (
     <div className="register-container">
       <ToastContainer /> {/* Toastify container for notifications */}
@@ -72,26 +86,6 @@ const Register = () => {
       <div className="register-box">
         <h2>Register</h2>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="input-group">
-            <input
-              type="text"
-              name="firstName"
-              placeholder="First Name"
-              {...register('firstName')}
-              className="input-field"
-            />
-            {errors.firstName && <span className="floating-error">{errors.firstName.message}</span>}
-          </div>
-          <div className="input-group">
-            <input
-              type="text"
-              name="lastName"
-              placeholder="Last Name"
-              {...register('lastName')}
-              className="input-field"
-            />
-            {errors.lastName && <span className="floating-error">{errors.lastName.message}</span>}
-          </div>
           <div className="input-group">
             <input
               type="email"
@@ -105,12 +99,12 @@ const Register = () => {
           <div className="input-group">
             <input
               type="text"
-              name="username"
-              placeholder="Username"
-              {...register('username')}
+              name="mobileNumber"
+              placeholder="Mobile Number"
+              {...register('mobileNumber')}
               className="input-field"
             />
-            {errors.username && <span className="floating-error">{errors.username.message}</span>}
+            {errors.mobileNumber && <span className="floating-error">{errors.mobileNumber.message}</span>}
           </div>
           <div className="input-group">
             <input
@@ -121,6 +115,15 @@ const Register = () => {
               className="input-field"
             />
             {errors.password && <span className="floating-error">{errors.password.message}</span>}
+          </div>
+          <div className="input-group">
+            <input
+              type="file"
+              name="profilePicture"
+              onChange={handleFileChange}
+              className="input-field"
+              accept="image/*"
+            />
           </div>
           <button type="submit" className="submit-btn">Register</button>
         </form>

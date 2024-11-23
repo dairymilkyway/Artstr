@@ -1,8 +1,10 @@
 const express = require('express');
-const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const upload = require('../utils/multerConfig'); // Import Cloudinary storage configuration
 const User = require('../models/User');
 const admin = require('../firebaseAdmin');
-const bcrypt = require('bcryptjs'); // Import bcrypt
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const router = express.Router();
 
 // Middleware to authenticate JWT tokens
@@ -25,32 +27,28 @@ const authMiddleware = async (req, res, next) => {
 };
 
 // Register Route
-router.post('/register', async (req, res) => {
-  const { token, firstName, lastName, username, password } = req.body;
+router.post('/register', upload.single('profilePicture'), async (req, res) => {
+  const { token, email, mobileNumber, password } = req.body;
+  const profilePicture = req.file;
 
   try {
     // Verify the Firebase ID token
     const decodedToken = await admin.auth().verifyIdToken(token);
-    const email = decodedToken.email;
 
-    // Check if email or username already exists
+    // Check if email already exists
     const existingEmail = await User.findOne({ email });
     if (existingEmail) return res.status(400).json({ message: 'Email already in use' });
-
-    const existingUsername = await User.findOne({ username });
-    if (existingUsername) return res.status(400).json({ message: 'Username already in use' });
 
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create new user with default userType
     const newUser = new User({
-      firstName,
-      lastName,
       email,
-      username,
+      mobileNumber,
       password: hashedPassword, // Save hashed password
       userType: 'user', // Default user type
+      profilePicture: profilePicture ? profilePicture.path : 'default-profile.png',
     });
 
     await newUser.save();
@@ -68,6 +66,7 @@ router.post('/register', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
 
 // Login Route
 router.post('/login', async (req, res) => {
@@ -91,7 +90,7 @@ router.post('/login', async (req, res) => {
 
     res.json({ token: jwtToken });
   } catch (error) {
-    console.error(error);
+    console.error('Error during login:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
