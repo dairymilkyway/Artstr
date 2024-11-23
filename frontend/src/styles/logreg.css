@@ -249,3 +249,19 @@ body {
 .google-icon {
   font-size: 20px;
 }
+
+.nav-links {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.nav-links a {
+  color: #666;
+  text-decoration: none;
+  margin: 0 10px;
+  transition: color 0.3s;
+}
+
+.nav-links a:hover {
+  color: #007bff;
+}

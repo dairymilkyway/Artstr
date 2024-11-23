@@ -11,6 +11,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import '../styles/logreg.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGoogle } from '@fortawesome/free-brands-svg-icons';
+import { Link } from 'react-router-dom';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -57,21 +58,21 @@ const Login = () => {
       });
     }
   };
-  
+
 
   const handleGoogleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const token = await result.user.getIdToken();
-  
+
       const response = await axios.post('http://localhost:5000/api/auth/login', { token });
       localStorage.setItem('token', response.data.token);
-  
+
       toast.success('Login successful! Redirecting...', {
         position: 'top-right',
         autoClose: 3000,
       });
-  
+
       setTimeout(() => navigate('/dashboard'), 3000);
     } catch (error) {
       console.error('Google login error:', error);
@@ -81,7 +82,7 @@ const Login = () => {
       });
     }
   };
-  
+
 
   return (
     <div className="login-container">
@@ -119,7 +120,13 @@ const Login = () => {
           <FontAwesomeIcon icon={faGoogle} className="google-icon" />
           Login with Google
         </button>
+        <div className="nav-links">
+          <Link to="/">Back to Home</Link>
+          <span>|</span>
+          <Link to="/register">Register</Link>
+        </div>
       </div>
+
     </div>
   );
 };

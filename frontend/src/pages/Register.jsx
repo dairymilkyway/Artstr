@@ -9,6 +9,7 @@ import * as yup from 'yup';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import '../styles/logreg.css';
+import { Link } from 'react-router-dom';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -127,6 +128,11 @@ const Register = () => {
           </div>
           <button type="submit" className="submit-btn">Register</button>
         </form>
+        <div className="nav-links">
+          <Link to="/">Back to Home</Link>
+          <span>|</span>
+          <Link to="/login">Login</Link>
+        </div>
       </div>
     </div>
   );

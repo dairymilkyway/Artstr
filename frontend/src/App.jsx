@@ -11,6 +11,7 @@ import CheckoutPage from './pages/CheckoutPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import SalesChart from './pages/admin/SalesChart'; // Import the new SalesChart page
 import ProtectedRoute from './ProtectedRoute';
+import LandingPage from './pages/LandingPage.jsx';
 
 const App = () => {
   return (
@@ -18,6 +19,7 @@ const App = () => {
       <CssBaseline />
       <Router>
         <Routes>
+         <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route
