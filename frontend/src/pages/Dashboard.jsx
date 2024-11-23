@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Typography, CircularProgress, Grid, Box } from '@mui/material';
+import { Typography, CircularProgress, Grid, Box, TextField, MenuItem, Slider, Select } from '@mui/material';
 import ProductCard from '../components/ProductCard';
 import Navbar from '../components/Navbar';
 import { toast, ToastContainer } from 'react-toastify';
@@ -15,23 +15,46 @@ const Dashboard = () => {
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
 
-  const getToken = () => {
-    return localStorage.getItem('token');
+  // Filters
+  const [priceRange, setPriceRange] = useState([0, 1000]);
+  const [category, setCategory] = useState('');
+  const [rating, setRating] = useState(0);
+  const [categories, setCategories] = useState([]);
+
+  const getToken = () => localStorage.getItem('token');
+
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/categories', {
+        headers: { Authorization: getToken() },
+      });
+      setCategories(response.data.categories || []);
+    } catch (err) {
+      console.error('Failed to fetch categories:', err);
+    }
   };
 
-  const fetchProducts = async (page) => {
+  const fetchProducts = async (page = 1, reset = false) => {
+    setLoading(true);
     try {
-      const response = await axios.get(`http://localhost:5000/api/products?page=${page}`, {
-        headers: {
-          Authorization: getToken(),
+      const response = await axios.get('http://localhost:5000/api/products', {
+        params: {
+          page,
+          priceRange: priceRange.join(','), // Format as "min,max"
+          category,
+          rating,
         },
+        headers: { Authorization: getToken() },
       });
       const { products: newProducts, totalPages } = response.data;
-      if (newProducts.length === 0 || page >= totalPages) {
-        setHasMore(false);
+
+      if (reset) {
+        setProducts(newProducts);
       } else {
         setProducts((prevProducts) => [...prevProducts, ...newProducts]);
       }
+
+      setHasMore(page < totalPages);
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch products.');
@@ -40,10 +63,9 @@ const Dashboard = () => {
     }
   };
 
-
   const addToCart = async (productId, quantity) => {
     try {
-      const response = await axios.post(
+      await axios.post(
         'http://localhost:5000/api/cart/add',
         { productId, quantity },
         { headers: { Authorization: `Bearer ${getToken()}` } }
@@ -55,13 +77,17 @@ const Dashboard = () => {
     }
   };
 
+  // Update filters and reset products
+  const handleFilterChange = () => {
+    setPage(1);
+    setHasMore(true);
+    fetchProducts(1, true); // Reset products with new filters
+  };
+
   useEffect(() => {
     fetchProducts(page);
+    fetchCategories();
   }, [page]);
-
-  const fetchMoreData = () => {
-    setPage((prevPage) => prevPage + 1);
-  };
 
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -70,6 +96,56 @@ const Dashboard = () => {
         <Navbar />
       </Box>
 
+      {/* Filters Section */}
+      <Box sx={{ padding: 3, backgroundColor: '#f5f5f5', display: 'flex', gap: 2, alignItems: 'center' }}>
+        <TextField
+          select
+          label="Category"
+          value={category}
+          onChange={(e) => {
+            setCategory(e.target.value);
+            handleFilterChange();
+          }}
+          sx={{ minWidth: 150 }}
+        >
+          <MenuItem value="">All</MenuItem>
+          {categories.map((cat) => (
+            <MenuItem key={cat.id} value={cat.name}>
+              {cat.name}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <Slider
+          value={priceRange}
+          onChange={(e, newValue) => setPriceRange(newValue)}
+          onChangeCommitted={handleFilterChange} // Trigger API call after final value
+          valueLabelDisplay="auto"
+          max={1000}
+          sx={{ width: 200 }}
+          aria-labelledby="price-range-slider"
+        />
+        <Typography>Price: ${priceRange[0]} - ${priceRange[1]}</Typography>
+
+        <Select
+          value={rating}
+          onChange={(e) => {
+            setRating(e.target.value);
+            handleFilterChange();
+          }}
+          displayEmpty
+          sx={{ minWidth: 120 }}
+        >
+          <MenuItem value={0}>All Ratings</MenuItem>
+          <MenuItem value={1}>1 Star & Up</MenuItem>
+          <MenuItem value={2}>2 Stars & Up</MenuItem>
+          <MenuItem value={3}>3 Stars & Up</MenuItem>
+          <MenuItem value={4}>4 Stars & Up</MenuItem>
+          <MenuItem value={5}>5 Stars</MenuItem>
+        </Select>
+      </Box>
+
+      {/* Product List */}
       <Box
         id="scrollableDiv"
         sx={{
@@ -80,9 +156,12 @@ const Dashboard = () => {
           scrollBehavior: 'smooth',
         }}
       >
+        {loading && page === 1 && <CircularProgress />}
+        {error && <Typography color="error">{error}</Typography>}
+
         <InfiniteScroll
           dataLength={products.length}
-          next={fetchMoreData}
+          next={() => setPage((prevPage) => prevPage + 1)}
           hasMore={hasMore}
           loader={<CircularProgress />}
           endMessage={
@@ -91,7 +170,7 @@ const Dashboard = () => {
             </Typography>
           }
           scrollableTarget="scrollableDiv"
-          className="infinite-scroll" // Add a custom class for targeting
+          className="infinite-scroll"
         >
           <Grid container spacing={3}>
             {products.map((product) => (

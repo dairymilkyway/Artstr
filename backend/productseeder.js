@@ -1,6 +1,7 @@
 require('dotenv').config(); // Load environment variables
 const mongoose = require('mongoose');
 const Product = require('./models/Product'); // Adjust the path to your Product model
+const Rating = require('./models/Ratings'); // Adjust the path to your Rating model
 
 // Connect to MongoDB using environment variables
 const connectDB = async () => {
@@ -19,7 +20,7 @@ const connectDB = async () => {
 // Generate Placeholder Products
 const generateProducts = () => {
   const products = [];
-  for (let i = 1; i <= 25; i++) {
+  for (let i = 1; i <= 40; i++) {
     products.push({
       name: `Product ${i}`,
       price: Math.floor(Math.random() * 500) + 50, // Random price between 50 and 550
@@ -29,23 +30,42 @@ const generateProducts = () => {
         `https://via.placeholder.com/150?text=Product+${i}+Image1`,
         `https://via.placeholder.com/150?text=Product+${i}+Image2`,
       ],
+      stocks: Math.floor(Math.random() * 100) + 1, // Random stock between 1 and 100
     });
   }
   return products;
 };
 
-// Products to Seed
-const products = generateProducts();
+// Generate Placeholder Ratings
+const generateRatings = async (productId) => {
+  const ratings = [];
+  for (let i = 1; i <= 5; i++) {
+    ratings.push({
+      userId: new mongoose.Types.ObjectId(), // Generate a new ObjectId for user
+      productId: productId,
+      rating: Math.floor(Math.random() * 5) + 1, // Random rating between 1 and 5
+      comment: `Comment ${i} for product ${productId}`,
+    });
+  }
+  await Rating.insertMany(ratings);
+};
 
 // Seed Function
 const seedProducts = async () => {
   try {
     await Product.deleteMany(); // Clear existing products
-    await Product.insertMany(products); // Insert new products
-    console.log('25 Products seeded successfully');
+    const products = generateProducts();
+    const insertedProducts = await Product.insertMany(products); // Insert new products
+
+    // Generate ratings for each product
+    for (const product of insertedProducts) {
+      await generateRatings(product._id);
+    }
+
+    console.log('Products and ratings seeded successfully');
     process.exit();
   } catch (error) {
-    console.error('Error seeding products:', error.message);
+    console.error('Error seeding products and ratings:', error.message);
     process.exit(1);
   }
 };

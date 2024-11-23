@@ -11,6 +11,7 @@ const orderRoutes = require('./routes/orders');
 const productRoutes = require('./routes/product');
 const cartRouter = require('./routes/cart');
 const userRoutes = require('./routes/user'); // Import the user routes
+const ratingsRoutes = require('./routes/ratings'); // Corrected path to ratings routes
 
 dotenv.config();
 
@@ -25,22 +26,26 @@ app.use((req, res, next) => {
   next();
 });
 
-// MongoDB connection
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.log('MongoDB connection error:', err));
-
-// Static files for uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Routes
+// Use routes
+app.use('/api/sales', salesRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/products', productRoutes);
-app.use('/api/auth', authRoutes);
 app.use('/api/cart', cartRouter);
-app.use('/api/users', userRoutes); // Add the user routes for profile updates
-app.use('/api/sales', salesRoutes);
-// Start server
-app.listen(process.env.PORT || 5000, () => {
-  console.log(`Server running on port ${process.env.PORT || 5000}`);
-});
+app.use('/api/users', userRoutes);
+app.use('/api', ratingsRoutes); // Register the ratings routes
+
+const PORT = process.env.PORT || 5000;
+
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error('Error connecting to MongoDB:', error.message);
+  });
