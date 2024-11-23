@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AppBar, Toolbar, Typography, Button, Box, TextField, IconButton, Avatar } from '@mui/material';
+import { useNavigate, useLocation } from 'react-router-dom'; // Import useLocation
+import { AppBar, Toolbar, Typography, Button, Box, TextField, IconButton, Avatar, Badge } from '@mui/material';
 import { FaSearch } from 'react-icons/fa';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import StarIcon from '@mui/icons-material/Star';
@@ -8,11 +8,11 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import LocalMallIcon from '@mui/icons-material/LocalMall';
 import axios from 'axios';
 import logo from '../assets/logo.png';
-import CartModal from './CartModel';
 
 const Navbar = () => {
   const navigate = useNavigate();
-  const [cartOpen, setCartOpen] = useState(false);
+  const location = useLocation(); // Get the current route
+  const [cartItemsCount, setCartItemsCount] = useState(0);
   const [profilePicture, setProfilePicture] = useState(null);
   const token = localStorage.getItem('token');
 
@@ -21,24 +21,34 @@ const Navbar = () => {
     navigate('/login');
   };
 
+  const fetchCartItemsCount = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/cart', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setCartItemsCount(response.data.items ? response.data.items.length : 0);
+    } catch (error) {
+      console.error('Error fetching cart items count:', error.response?.data?.message || error.message);
+    }
+  };
+
   useEffect(() => {
     const fetchProfilePicture = async () => {
       if (!token) return;
 
       try {
         const response = await axios.get('http://localhost:5000/api/users/profile', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
         const user = response.data.user;
-        setProfilePicture(user.profilePicture); // Assuming the backend returns a `profilePicture` URL
+        setProfilePicture(user.profilePicture);
       } catch (error) {
         console.error('Error fetching profile picture:', error.response?.data?.message || error.message);
       }
     };
 
     fetchProfilePicture();
+    fetchCartItemsCount();
   }, [token]);
 
   const commonButtonStyles = {
@@ -126,10 +136,15 @@ const Navbar = () => {
             </Button>
             <IconButton
               color="inherit"
-              onClick={() => setCartOpen(true)}
+              onClick={() => navigate('/cart')}
               sx={commonButtonStyles}
             >
-              <ShoppingCartIcon />
+              <Badge
+                badgeContent={location.pathname === '/cart' ? 0 : cartItemsCount} // Remove badge count on /cart
+                color="error"
+              >
+                <ShoppingCartIcon />
+              </Badge>
             </IconButton>
             {/* Profile Picture */}
             <IconButton onClick={() => navigate('/profile')} sx={{ padding: 0 }}>
@@ -158,8 +173,6 @@ const Navbar = () => {
           </Box>
         </Toolbar>
       </AppBar>
-
-      <CartModal open={cartOpen} handleClose={() => setCartOpen(false)} token={token} />
     </>
   );
 };

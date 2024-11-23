@@ -45,8 +45,7 @@ const StyledButton = styled(Button)({
   }
 });
 
-
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, onAddToCart }) => {
   const [activeStep, setActiveStep] = React.useState(0);
   const maxSteps = product.photos?.length || 1;
 
@@ -162,18 +161,29 @@ const ProductCard = ({ product }) => {
         <Typography variant="h6" sx={{ color: '#1DB954', mt: 2 }}>
           ${product.price}
         </Typography>
+        <Typography
+          variant="subtitle2"
+          sx={{
+            mt: 1,
+            color: product.stocks > 0 ? '#1DB954' : '#f44336',
+            fontWeight: 'bold',
+          }}
+        >
+          {product.stocks > 0
+            ? `${product.stocks} in stock`
+            : 'Out of stock'}
+        </Typography>
       </CardContent>
 
       <CardActions sx={{ padding: 2 }}>
-
-        <CardActions sx={{ padding: 2, gap: 1 }}>
-          <StyledButton size="small" className="secondary">
-            View More
-          </StyledButton>
-          <StyledButton size="small" className="primary">
-            Add to Cart
-          </StyledButton>
-        </CardActions>
+        <StyledButton
+          size="small"
+          className="primary"
+          onClick={onAddToCart}
+          disabled={product.stocks <= 0} // Disable button if out of stock
+        >
+          {product.stocks > 0 ? 'Add to Cart' : 'Out of Stock'}
+        </StyledButton>
       </CardActions>
     </StyledCard>
   );
@@ -186,7 +196,9 @@ ProductCard.propTypes = {
     category: PropTypes.string.isRequired,
     details: PropTypes.string,
     photos: PropTypes.arrayOf(PropTypes.string),
+    stocks: PropTypes.number.isRequired, // Added stocks prop type
   }).isRequired,
+  onAddToCart: PropTypes.func.isRequired,
 };
 
 export default ProductCard;

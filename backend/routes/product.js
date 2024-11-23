@@ -19,10 +19,10 @@ router.get('/', authMiddleware, async (req, res) => {
 // Add a new product with photo uploads
 router.post('/', authMiddleware, upload.array('photos', 10), async (req, res) => {
   try {
-    const { name, price, category, details } = req.body;
+    const { name, price, category, details, stocks } = req.body; // Include stocks
     const photos = req.files.map((file) => file.path); // Cloudinary URLs
 
-    const newProduct = new Product({ name, price, category, details, photos });
+    const newProduct = new Product({ name, price, category, details, photos, stocks }); // Add stocks here
     await newProduct.save();
 
     res.status(201).json({ message: 'Product added successfully', product: newProduct });
@@ -35,10 +35,10 @@ router.post('/', authMiddleware, upload.array('photos', 10), async (req, res) =>
 // Update a product
 router.put('/:id', authMiddleware, upload.array('photos', 10), async (req, res) => {
   try {
-    const { name, price, category, details } = req.body;
+    const { name, price, category, details, stocks } = req.body; // Include stocks
     const photos = req.files.map((file) => file.path); // Cloudinary URLs
 
-    const updateFields = { name, price, category, details };
+    const updateFields = { name, price, category, details, stocks }; // Add stocks here
     if (photos.length > 0) {
       updateFields.photos = photos;
     }
@@ -54,6 +54,7 @@ router.put('/:id', authMiddleware, upload.array('photos', 10), async (req, res) 
     res.status(500).json({ message: 'Server error' });
   }
 });
+
 
 // Delete a product
 router.delete('/:id', authMiddleware, async (req, res) => {

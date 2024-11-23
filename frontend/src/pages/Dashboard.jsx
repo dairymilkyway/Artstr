@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Container, Typography, CircularProgress, Grid, Alert, Box } from '@mui/material';
+import { Container, Typography, CircularProgress, Grid, Alert, Box, Button } from '@mui/material';
 import ProductCard from '../components/ProductCard';
 import Navbar from '../components/Navbar';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Dashboard = () => {
   const [products, setProducts] = useState([]);
@@ -13,29 +15,44 @@ const Dashboard = () => {
     return localStorage.getItem('token');
   };
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      try {
-        const response = await axios.get('http://localhost:5000/api/products', {
-          headers: {
-            Authorization: getToken(),
-          },
-        });
-        setProducts(response.data);
-        setError(null);
-      } catch (err) {
-        setError(err.response?.data?.message || 'Failed to fetch products.');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get('http://localhost:5000/api/products', {
+        headers: {
+          Authorization: getToken(),
+        },
+      });
+      setProducts(response.data);
+      setError(null);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to fetch products.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchProducts();
   }, []);
 
+  const addToCart = async (productId, quantity) => {
+    try {
+      const response = await axios.post(
+        'http://localhost:5000/api/cart/add',
+        { productId, quantity },
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
+      toast.success('Item added to cart');
+    } catch (error) {
+      toast.error('Failed to add item to cart');
+      console.error(error);
+    }
+  };
+
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <ToastContainer position="top-right" autoClose={3000} />
       <Box sx={{ position: 'sticky', top: 0, zIndex: 1 }}>
         <Navbar />
       </Box>
@@ -45,7 +62,6 @@ const Dashboard = () => {
         overflowY: 'auto',
         padding: 3
       }}>
-
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
         {loading ? (
@@ -56,7 +72,7 @@ const Dashboard = () => {
           <Grid container spacing={3}>
             {products.map((product) => (
               <Grid item key={product._id} xs={12} sm={6} md={4}>
-                <ProductCard product={product} />
+                <ProductCard product={product} onAddToCart={() => addToCart(product._id, 1)} />
               </Grid>
             ))}
           </Grid>

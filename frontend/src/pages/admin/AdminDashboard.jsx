@@ -117,7 +117,6 @@ const AdminDashboard = () => {
       toast.error('Error adding product', { position: 'top-right' });
     }
   };
-
   const schema = yup.object().shape({
     name: yup.string().trim().required('Product Name is required'),
     price: yup
@@ -127,6 +126,12 @@ const AdminDashboard = () => {
       .typeError('Price must be a number'),
     category: yup.string().trim().required('Category is required'),
     details: yup.string().trim().required('Details are required'),
+    stocks: yup
+      .number()
+      .integer('Stocks must be an integer')
+      .min(0, 'Stocks cannot be negative')
+      .required('Stocks are required')
+      .typeError('Stocks must be a number'),
     photos: yup
       .mixed()
       .test('fileType', 'Only image files are allowed', (value) => {
@@ -138,6 +143,7 @@ const AdminDashboard = () => {
         return Array.from(value).every((file) => file.size <= 5 * 1024 * 1024);
       }),
   });
+  
 
   const {
     register,
@@ -177,6 +183,7 @@ const AdminDashboard = () => {
     { name: 'price', label: 'Price' },
     { name: 'category', label: 'Category' },
     { name: 'details', label: 'Details' },
+    { name: 'stocks', label: 'Stocks' }, // Add Stocks Column
     {
       name: 'photos',
       label: 'Photos',
@@ -210,7 +217,7 @@ const AdminDashboard = () => {
       },
     },
   ];
-
+  
   const options = {
     selectableRows: 'multiple',
     onRowsSelect: (currentRowsSelected, allRowsSelected) => {
@@ -236,6 +243,9 @@ const AdminDashboard = () => {
               </p>
               <p>
                 <strong>Price:</strong> {product.price}
+              </p>
+              <p>
+                <strong>Stocks:</strong> {product.stocks}
               </p>
               <p>
                 <strong>Category:</strong> {product.category}
@@ -303,6 +313,16 @@ const AdminDashboard = () => {
               helperText={errors.price?.message}
             />
             <TextField
+             label="Stocks"
+             type="number"
+             variant="outlined"
+             fullWidth
+            {...register('stocks')}
+            error={!!errors.stocks}
+            helperText={errors.stocks?.message}
+             />
+
+            <TextField
               label="Category"
               variant="outlined"
               fullWidth
@@ -359,6 +379,17 @@ const AdminDashboard = () => {
                     error={!!modalErrors.price}
                     helperText={modalErrors.price?.message}
                   />
+                  <TextField
+                     label="Stocks"
+                     type="number"
+                    variant="outlined"
+                      fullWidth
+  defaultValue={selectedProduct.stocks}
+  {...modalRegister('stocks')}
+  error={!!modalErrors.stocks}
+  helperText={modalErrors.stocks?.message}
+/>
+
                   <TextField
                     label="Category"
                     variant="outlined"

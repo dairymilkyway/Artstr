@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import UserProfile from './pages/UserProfile';
+import CartPage from './pages/CartPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ProtectedRoute from './ProtectedRoute';
 
@@ -22,6 +23,14 @@ const App = () => {
             element={
               <ProtectedRoute userType="user">
                 <UserProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cart"
+            element={
+              <ProtectedRoute userType="user">
+                <CartPage />
               </ProtectedRoute>
             }
           />
