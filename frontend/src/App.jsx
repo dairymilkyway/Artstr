@@ -1,19 +1,20 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ThemeProvider, CssBaseline } from '@mui/material'; // Import ThemeProvider and CssBaseline
-import theme from './theme.js'; // Import your custom theme
+import { ThemeProvider, CssBaseline } from '@mui/material';
+import theme from './theme.js';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import UserProfile from './pages/UserProfile';
 import CartPage from './pages/CartPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import SalesChart from './pages/admin/SalesChart'; // Import the new SalesChart page
 import ProtectedRoute from './ProtectedRoute';
 
 const App = () => {
   return (
     <ThemeProvider theme={theme}>
-      <CssBaseline /> {/* This helps to normalize styles across browsers */}
+      <CssBaseline />
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
@@ -47,6 +48,14 @@ const App = () => {
             element={
               <ProtectedRoute userType="admin">
                 <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sales-chart"
+            element={
+              <ProtectedRoute userType="admin">
+                <SalesChart />
               </ProtectedRoute>
             }
           />

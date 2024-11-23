@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signInWithPopup } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import axios from 'axios';
 import { auth, googleProvider } from './firebaseConfig';
 import { useForm } from 'react-hook-form';
@@ -57,37 +57,31 @@ const Login = () => {
       });
     }
   };
+  
 
   const handleGoogleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const token = await result.user.getIdToken();
-
-      // Send the token to your backend
+  
       const response = await axios.post('http://localhost:5000/api/auth/login', { token });
-
-      // Store the backend token in localStorage
       localStorage.setItem('token', response.data.token);
-
-      // Show success notification
+  
       toast.success('Login successful! Redirecting...', {
         position: 'top-right',
         autoClose: 3000,
       });
-
-      // Redirect to dashboard after 3 seconds
+  
       setTimeout(() => navigate('/dashboard'), 3000);
     } catch (error) {
-      // Log the error message for debugging
       console.error('Google login error:', error);
-
-      // Show error notification
       toast.error(error.response?.data?.message || 'Google login failed', {
         position: 'top-right',
         autoClose: 5000,
       });
     }
   };
+  
 
   return (
     <div className="login-container">

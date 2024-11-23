@@ -70,47 +70,66 @@ router.post('/register', upload.single('profilePicture'), async (req, res) => {
 
 // Login Route
 router.post('/login', async (req, res) => {
-  const { token } = req.body;
+  const { email, password, token } = req.body;
 
   try {
-    console.log('Received token:', token); // Log the received token
+    let user;
+    let decodedToken;
 
-    // Verify the Firebase ID token
-    const decodedToken = await admin.auth().verifyIdToken(token);
-    console.log('Decoded token:', decodedToken); // Log the decoded token
+    if (token) {
+      // Google login
+      console.log('Google login attempt with token:', token);
+      decodedToken = await admin.auth().verifyIdToken(token);
+      const googleEmail = decodedToken.email;
+      console.log('Decoded Google token email:', googleEmail);
 
-    const email = decodedToken.email;
+      // Find user by email
+      user = await User.findOne({ email: googleEmail });
 
-    // Find user by email
-    let user = await User.findOne({ email });
-    if (!user) {
-      // If user does not exist, create a new user
-      user = new User({
-        email,
-        mobileNumber: 'N/A', // Provide a default value for mobileNumber
-        password: 'N/A', // Provide a default value for password
-        userType: 'user', // Default user type
-        profilePicture: decodedToken.picture || 'default-profile.png',
-      });
-      await user.save();
-      console.log('New user created:', user);
+      if (!user) {
+        // If user doesn't exist, create a new user for Google login
+        console.log('Creating new user for Google login');
+        user = new User({
+          email: googleEmail,
+          mobileNumber: 'N/A',
+          password: 'N/A',
+          userType: 'user',
+          profilePicture: decodedToken.picture || 'default-profile.png',
+        });
+        await user.save();
+      }
+    } else {
+      // Email/password login
+      console.log('Email/password login attempt with email:', email);
+      user = await User.findOne({ email });
+      if (!user) {
+        console.log('User not found for email:', email);
+        return res.status(400).json({ message: 'Invalid email or password' });
+      }
+
+      // Validate password
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        console.log('Password mismatch for email:', email);
+        return res.status(400).json({ message: 'Invalid email or password' });
+      }
     }
 
-    // Generate JWT token with userType
+    // Generate JWT token
     const jwtToken = jwt.sign(
       { userId: user._id, userType: user.userType },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 
+    console.log('Login successful for email:', user.email);
     res.json({ token: jwtToken });
   } catch (error) {
-    // Log the error message for debugging
     console.error('Error during login:', error);
-
     res.status(500).json({ message: 'Server error' });
   }
 });
+
 
 // Protected Dashboard Route
 router.get('/dashboard', authMiddleware, async (req, res) => {

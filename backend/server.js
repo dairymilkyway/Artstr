@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 const path = require('path');
 
 // Routes
+const salesRoutes = require('./routes/sales');
 const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/product');
 const cartRouter = require('./routes/cart');
@@ -36,7 +37,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/cart', cartRouter);
 app.use('/api/users', userRoutes); // Add the user routes for profile updates
-
+app.use('/api/sales', salesRoutes);
 // Start server
 app.listen(process.env.PORT || 5000, () => {
   console.log(`Server running on port ${process.env.PORT || 5000}`);

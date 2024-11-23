@@ -55,11 +55,11 @@ const Sidebar = () => {
           </ListItemIcon>
           <ListItemText primary="Reviews" />
         </ListItem>
-        <ListItem button onClick={() => navigate('/charts')}>
+        <ListItem button onClick={() => navigate('/sales-chart')}>
           <ListItemIcon>
             <BarChart style={{ color: '#1DB954' }} />
           </ListItemIcon>
-          <ListItemText primary="Charts" />
+          <ListItemText primary="Sales Chart" />
         </ListItem>
         <ListItem button onClick={handleLogout}>
           <ListItemIcon>
