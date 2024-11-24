@@ -8,6 +8,17 @@ const Filter = require('bad-words');
 const router = express.Router();
 
 // Get all products with pagination
+
+router.get('/admin', authMiddleware, async (req, res) => {
+  try {
+    const products = await Product.find();
+    res.json(products);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1; // Default to page 1

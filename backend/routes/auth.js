@@ -83,6 +83,7 @@ router.post('/login', async (req, res) => {
         // If user doesn't exist, create a new user for Google login
         console.log('Creating new user for Google login');
         user = new User({
+          name: 'GoogleUser',
           email: googleEmail,
           mobileNumber: 'N/A',
           password: 'N/A',

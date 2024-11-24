@@ -32,7 +32,7 @@ const AdminDashboard = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/products', {
+      const response = await axios.get('http://localhost:5000/api/products/admin', {
         headers: { Authorization: getToken() },
       });
       setProducts(response.data);
@@ -41,6 +41,7 @@ const AdminDashboard = () => {
       toast.error('Error fetching products', { position: 'top-right' });
     }
   };
+
 
   useEffect(() => {
     fetchProducts();
