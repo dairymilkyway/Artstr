@@ -113,35 +113,10 @@ const Navbar = () => {
             alignItems="center"
             sx={{ flexGrow: 1, mx: 3, justifyContent: 'center' }}
           >
-            <TextField
-              variant="outlined"
-              placeholder="Search products..."
-              size="small"
-              sx={{
-                width: 300,
-                backgroundColor: 'white',
-                borderRadius: 25,
-                boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 25,
-                  fontSize: '1rem',
-                },
-              }}
-            />
-            <IconButton color="inherit" aria-label="search" sx={{ ml: 1 }}>
-              <FaSearch />
-            </IconButton>
           </Box>
 
           {/* Right Section */}
           <Box display="flex" alignItems="center" gap={2}>
-            <Button
-              color="inherit"
-              startIcon={<StarIcon />}
-              sx={commonButtonStyles}
-            >
-              Reviews
-            </Button>
             <Button
               color="inherit"
               startIcon={<LocalMallIcon />}
