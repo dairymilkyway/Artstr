@@ -41,7 +41,8 @@ const Login = () => {
 
       // Store the backend token in localStorage
       localStorage.setItem('token', response.data.token);
-
+      localStorage.setItem('userId', response.data.userId);
+      
       // Show success notification
       toast.success('Login successful! Redirecting...', {
         position: 'top-right',

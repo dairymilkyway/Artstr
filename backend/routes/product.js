@@ -94,14 +94,16 @@ router.post('/delete', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+// Add a review to a product
 router.post('/:id/review', authMiddleware, async (req, res) => {
   try {
-    const { rating, comment, orderId } = req.body;
+    const { rating, comment } = req.body;
     const productId = req.params.id;
     const userId = req.user.id;
 
-    const order = await Order.findById(orderId);
-    if (!order || order.user.toString() !== userId || !order.items.some(item => item.product && item.product.toString() === productId)) {
+    // Check if the user has ordered the product
+    const orders = await Order.find({ user: userId, 'items.product': productId });
+    if (orders.length === 0) {
       return res.status(403).json({ message: 'You can only review products you have ordered' });
     }
 
@@ -110,26 +112,25 @@ router.post('/:id/review', authMiddleware, async (req, res) => {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    const hasReviewed = product.reviews.some(review => review.user.toString() === userId && review.orderId && review.orderId.toString() === orderId);
-    if (hasReviewed) {
-      return res.status(403).json({ message: 'You have already reviewed this order. Please place another order to review again.' });
-    }
-
     const user = await User.findById(userId);
+
+    // Filter bad words from the comment
     const filter = new Filter();
     const cleanComment = filter.clean(comment);
 
     const review = {
       user: userId,
-      orderId,
       rating,
       comment: cleanComment,
       userName: user.name,
     };
 
     product.reviews.push(review);
+
+    // Update the average rating
     product.totalRatings += 1;
-    product.averageRating = product.reviews.reduce((sum, review) => sum + review.rating, 0) / product.totalRatings;
+    product.averageRating =
+      product.reviews.reduce((sum, review) => sum + review.rating, 0) / product.totalRatings;
 
     await product.save();
     res.status(201).json({ message: 'Review added successfully', product });
@@ -138,7 +139,6 @@ router.post('/:id/review', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
-
 // Update a review
 router.put('/:id/review', authMiddleware, async (req, res) => {
   try {
@@ -146,21 +146,32 @@ router.put('/:id/review', authMiddleware, async (req, res) => {
     const productId = req.params.id;
     const userId = req.user.id;
 
+    // Find the product
     const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    const review = product.reviews.find(review => review.user.toString() === userId);
-    if (!review) {
-      return res.status(404).json({ message: 'Review not found' });
+    // Find the review to update
+    const reviewIndex = product.reviews.findIndex(
+      (review) => review.user.toString() === userId
+    );
+
+    if (reviewIndex === -1) {
+      return res
+        .status(403)
+        .json({ message: 'You can only update your own review' });
     }
 
+    // Update the review
     const filter = new Filter();
-    review.rating = rating;
-    review.comment = filter.clean(comment);
+    product.reviews[reviewIndex].rating = rating;
+    product.reviews[reviewIndex].comment = filter.clean(comment);
 
-    product.averageRating = product.reviews.reduce((sum, review) => sum + review.rating, 0) / product.reviews.length;
+    // Recalculate average rating
+    product.averageRating =
+      product.reviews.reduce((sum, review) => sum + review.rating, 0) /
+      product.reviews.length;
 
     await product.save();
     res.status(200).json({ message: 'Review updated successfully', product });
@@ -169,6 +180,7 @@ router.put('/:id/review', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
 // Get reviews for a product
 router.get('/:id/reviews', async (req, res) => {
   try {
@@ -194,4 +206,5 @@ router.get('/:id/reviews', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
 module.exports = router;

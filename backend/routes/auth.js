@@ -116,12 +116,19 @@ router.post('/login', async (req, res) => {
     );
 
     console.log('Login successful for email:', user.email);
-    res.json({ token: jwtToken });
+
+    // Include userId in the response
+    res.json({
+      token: jwtToken,
+      userId: user._id, // Add userId here
+      email: user.email, // Optionally include email or other user info
+    });
   } catch (error) {
     console.error('Error during login:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
+
 
 
 // Protected Dashboard Route

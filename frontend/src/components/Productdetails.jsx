@@ -50,16 +50,16 @@ const StyledButton = styled(Button)({
 const ProductModal = ({ product, open, onClose }) => {
   const [activeStep, setActiveStep] = useState(0);
   const [ratings, setRatings] = useState([]);
-  const [review, setReview] = useState({ rating: 0, comment: '', orderId: '' });
-  const [canReview, setCanReview] = useState(false);
-  const [showReviewsModal, setShowReviewsModal] = useState(false);
-  const [editingReview, setEditingReview] = useState(null);
+  const [review, setReview] = useState({ rating: 0, comment: '' });
+  const [canReview, setCanReview] = useState(false); // Can write a review
+  const [editingReview, setEditingReview] = useState(false); // Editing an existing review
+  const [userReview, setUserReview] = useState(null); // User's existing review
+  const [showReviewsModal, setShowReviewsModal] = useState(false); // Modal for viewing reviews
   const maxSteps = product.photos?.length || 1;
 
   useEffect(() => {
     if (open) {
       fetchRatings();
-      checkIfCanReview();
     }
   }, [open]);
 
@@ -68,7 +68,26 @@ const ProductModal = ({ product, open, onClose }) => {
       const response = await axios.get(
         `http://localhost:5000/api/products/${product._id}/reviews`
       );
+
+      const currentUserId = localStorage.getItem('userId'); // Get userId from localStorage
+      const existingReview = response.data.find(
+        (review) => review.user === currentUserId
+      );
+
       setRatings(response.data);
+
+      if (existingReview) {
+        setUserReview(existingReview);
+        setReview({
+          rating: existingReview.rating,
+          comment: existingReview.comment,
+        });
+        setEditingReview(true); // Enable editing mode if the user has a review
+      } else {
+        setEditingReview(false);
+      }
+
+      checkIfCanReview();
     } catch (error) {
       console.error('Failed to fetch ratings:', error);
     }
@@ -83,14 +102,13 @@ const ProductModal = ({ product, open, onClose }) => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      const reviewedOrderIds = new Set(ratings.map(rating => rating.orderId));
-      const unreviewedOrders = response.data.filter(order => !reviewedOrderIds.has(order._id));
-      if (unreviewedOrders.length > 0) {
-        setReview(prevReview => ({ ...prevReview, orderId: unreviewedOrders[0]._id }));
-        setCanReview(true);
-      } else {
-        setCanReview(false);
-      }
+
+      const reviewedOrderIds = new Set(ratings.map((r) => r.orderId));
+      const unreviewedOrders = response.data.filter(
+        (order) => !reviewedOrderIds.has(order._id)
+      );
+
+      setCanReview(unreviewedOrders.length > 0);
     } catch (error) {
       console.error('Failed to check if user can review:', error);
     }
@@ -112,43 +130,86 @@ const ProductModal = ({ product, open, onClose }) => {
   const handleReviewSubmit = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.post(
-        `http://localhost:5000/api/products/${product._id}/review`,
+      const endpoint = `http://localhost:5000/api/products/${product._id}/review`;
+      const method = editingReview ? 'put' : 'post';
+
+      await axios[method](
+        endpoint,
         review,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      fetchRatings();
-      setReview({ rating: 0, comment: '', orderId: '' });
-      checkIfCanReview();
+
+      fetchRatings(); // Refresh reviews
+      setReview({ rating: 0, comment: '' }); // Reset the form
+      setEditingReview(false); // Stop editing mode
     } catch (error) {
       console.error('Failed to submit review:', error);
     }
   };
 
-  const handleReviewUpdate = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      await axios.put(
-        `http://localhost:5000/api/products/${product._id}/review`,
-        review,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      fetchRatings();
-      setReview({ rating: 0, comment: '', orderId: '' });
-      setEditingReview(null);
-      checkIfCanReview();
-    } catch (error) {
-      console.error('Failed to update review:', error);
-    }
-  };
+  const EditReviewModal = ({ open, onClose, review, onReviewChange, onSubmit }) => (
+    <StyledDialog open={open} onClose={onClose}>
+      <DialogTitle>
+        Edit Your Review
+        <IconButton
+          aria-label="close"
+          onClick={onClose}
+          sx={{
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: '#fff',
+          }}
+        >
+          <Close />
+        </IconButton>
+      </DialogTitle>
+      <DialogContent>
+        <Typography variant="h6" gutterBottom>
+          Edit Your Review
+        </Typography>
+        <Rating
+          name="rating"
+          value={review.rating}
+          precision={0.5}
+          onChange={(e, value) =>
+            onReviewChange({ ...review, rating: value })
+          }
+          sx={{ mb: 2, color: '#1DB954' }}
+        />
+        <TextField
+          label="Comment"
+          name="comment"
+          value={review.comment}
+          onChange={(e) =>
+            onReviewChange({ ...review, comment: e.target.value })
+          }
+          fullWidth
+          margin="normal"
+          multiline
+          rows={4}
+          InputLabelProps={{
+            style: { color: 'white' },
+          }}
+          InputProps={{
+            style: { color: 'white' },
+          }}
+        />
+        <StyledButton
+          size="small"
+          className="primary"
+          onClick={onSubmit}
+          sx={{ mt: 2 }}
+        >
+          Update Review
+        </StyledButton>
+      </DialogContent>
+    </StyledDialog>
+  );
+  
 
   const toggleReviewsModal = () => {
     setShowReviewsModal((prev) => !prev);
-  };
-
-  const handleEditReview = (review) => {
-    setEditingReview(review);
-    setReview({ rating: review.rating, comment: review.comment, orderId: review.orderId });
   };
 
   return (
@@ -272,10 +333,10 @@ const ProductModal = ({ product, open, onClose }) => {
                 View Reviews
               </StyledButton>
 
-              {canReview ? (
+              {canReview || editingReview ? (
                 <>
                   <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-                    Write a Review
+                    {editingReview ? 'Edit Your Review' : 'Write a Review'}
                   </Typography>
                   <Rating
                     name="rating"
@@ -307,7 +368,7 @@ const ProductModal = ({ product, open, onClose }) => {
                     className="primary"
                     onClick={handleReviewSubmit}
                   >
-                    Submit Review
+                    {editingReview ? 'Update Review' : 'Submit Review'}
                   </StyledButton>
                 </>
               ) : (
@@ -341,98 +402,55 @@ const ProductModal = ({ product, open, onClose }) => {
           </IconButton>
         </DialogTitle>
         <DialogContent>
-          {ratings.length > 0 ? (
-            ratings.map((rating) => (
-              <Box key={rating._id} sx={{ mb: 2 }}>
-                <Rating
-                  value={rating.rating}
-                  precision={0.5}
-                  readOnly
-                  sx={{ color: '#1DB954' }}
-                />
-                <Typography variant="body2" sx={{ color: 'white' }}>
-                  {rating.comment}
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'white' }}>
-                  By: {rating.userName}
-                </Typography>
-                {rating.user === localStorage.getItem('userId') && (
-                  <StyledButton
-                    size="small"
-                    className="primary"
-                    onClick={() => handleEditReview(rating)}
-                  >
-                    Edit Review
-                  </StyledButton>
-                )}
-                <Divider sx={{ my: 1 }} />
-              </Box>
-            ))
-          ) : (
-            <Typography variant="body2" sx={{ color: 'white' }}>
-              No reviews yet.
-            </Typography>
-          )}
-        </DialogContent>
-      </StyledDialog>
+    {ratings.length > 0 ? (
+      ratings.map((rating) => {
+        const currentUserId = localStorage.getItem('userId'); // Fetch logged-in userId
+        const isUserReview = rating.user?._id === currentUserId; // Check if this review belongs to the logged-in user
 
-      {/* Edit Review Modal */}
-      {editingReview && (
-        <StyledDialog open={Boolean(editingReview)} onClose={() => setEditingReview(null)}>
-          <DialogTitle>
-            Edit Review
-            <IconButton
-              aria-label="close"
-              onClick={() => setEditingReview(null)}
-              sx={{
-                position: 'absolute',
-                right: 8,
-                top: 8,
-                color: '#fff',
-              }}
-            >
-              <Close />
-            </IconButton>
-          </DialogTitle>
-          <DialogContent>
-            <Typography variant="h6" gutterBottom>
-              Edit your review for {product.name}
-            </Typography>
+        return (
+          <Box key={rating._id} sx={{ mb: 2 }}>
             <Rating
-              name="rating"
-              value={review.rating}
+              value={rating.rating}
               precision={0.5}
-              onChange={(e, value) =>
-                setReview((prev) => ({ ...prev, rating: value }))
-              }
-              sx={{ mb: 2, color: '#1DB954' }}
+              readOnly
+              sx={{ color: '#1DB954' }}
             />
-            <TextField
-              label="Comment"
-              name="comment"
-              value={review.comment}
-              onChange={handleReviewChange}
-              fullWidth
-              margin="normal"
-              multiline
-              rows={4}
-              InputLabelProps={{
-                style: { color: 'white' },
-              }}
-              InputProps={{
-                style: { color: 'white' },
-              }}
-            />
-            <StyledButton
+            <Typography variant="body2" sx={{ color: 'white' }}>
+              {rating.comment}
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'white' }}>
+              By: {rating.userName}
+            </Typography>
+
+            {isUserReview && (
+              <StyledButton
+              className="secondary"
               size="small"
-              className="primary"
-              onClick={handleReviewUpdate}
+              onClick={() => {
+                setEditingReview(true); // Enable editing mode
+                setReview({
+                  rating: rating.rating,
+                  comment: rating.comment,
+                }); // Pre-fill the review form
+                setShowReviewsModal(false); // Close the reviews modal
+              }}
             >
-              Update Review
+              Edit Your Review
             </StyledButton>
-          </DialogContent>
-        </StyledDialog>
-      )}
+            
+            )}
+
+            <Divider sx={{ my: 1 }} />
+          </Box>
+        );
+      })
+    ) : (
+      <Typography variant="body2" sx={{ color: 'white' }}>
+        No reviews yet.
+      </Typography>
+    )}
+  </DialogContent>
+</StyledDialog>
     </>
   );
 };
