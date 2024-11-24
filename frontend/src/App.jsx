@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import UserProfile from './pages/UserProfile';
+import AdminReviews from './pages/admin/AdminReviews';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import AdminOrders from './pages/admin/AdminOrders'; 
@@ -71,8 +72,16 @@ const App = () => {
               </ProtectedRoute>
             }
           />
+           <Route
+            path="/admin-reviews"
+            element={
+              <ProtectedRoute userType="admin">
+                <AdminReviews />
+              </ProtectedRoute>
+            }
+          />
           <Route
-            path="/sales-chart"
+            path="/admin-chart"
             element={
               <ProtectedRoute userType="admin">
                 <SalesChart />

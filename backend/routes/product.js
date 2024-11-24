@@ -191,7 +191,59 @@ router.put('/:id/review', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+router.delete('/:productId/review/:reviewId', authMiddleware, async (req, res) => {
+  try {
+    const { productId, reviewId } = req.params;
 
+    // Find the product
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    // Find the review to delete
+    const reviewIndex = product.reviews.findIndex(
+      (review) => review._id.toString() === reviewId
+    );
+
+    if (reviewIndex === -1) {
+      return res.status(404).json({ message: 'Review not found' });
+    }
+
+    // Remove the review
+    product.reviews.splice(reviewIndex, 1);
+
+    // Recalculate average rating
+    product.totalRatings = product.reviews.length;
+    product.averageRating =
+      product.reviews.reduce((sum, review) => sum + review.rating, 0) / product.totalRatings || 0;
+
+    await product.save();
+    res.status(200).json({ message: 'Review deleted successfully', product });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get all reviews
+router.get('/reviews', authMiddleware, async (req, res) => {
+  try {
+    const products = await Product.find().populate('reviews.user', 'name');
+    const reviews = products.flatMap(product => 
+      product.reviews.map(review => ({
+        ...review.toObject(),
+        productId: product._id,
+        productName: product.name,
+        userName: review.user.name,
+      }))
+    );
+    res.json(reviews);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 // Get reviews for a product
 router.get('/:id/reviews', async (req, res) => {
   try {

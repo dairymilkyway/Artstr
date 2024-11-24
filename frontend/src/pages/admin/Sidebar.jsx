@@ -31,7 +31,7 @@ const Sidebar = () => {
     >
       <div className="sidebar-header">
         <img
-          src="https://upload.wikimedia.org/wikipedia/commons/6/66/Spotify_Logo.png"
+          src="https://res.cloudinary.com/dnzxfbjfq/image/upload/v1732357343/lkvcodsmpzf2u1eincsv.png"
           alt="Spotify"
           className="sidebar-logo"
         />
@@ -50,13 +50,13 @@ const Sidebar = () => {
           </ListItemIcon>
           <ListItemText primary="Manage Orders" />
         </ListItem>
-        <ListItem button onClick={() => navigate('/reviews')}>
+        <ListItem button onClick={() => navigate('/admin-reviews')}>
           <ListItemIcon>
             <RateReview style={{ color: '#1DB954' }} />
           </ListItemIcon>
           <ListItemText primary="Reviews" />
         </ListItem>
-        <ListItem button onClick={() => navigate('/sales-chart')}>
+        <ListItem button onClick={() => navigate('/admin-chart')}>
           <ListItemIcon>
             <BarChart style={{ color: '#1DB954' }} />
           </ListItemIcon>
