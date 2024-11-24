@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import theme from './theme.js';
@@ -15,10 +15,31 @@ import SalesChart from './pages/admin/SalesChart';
 import ProtectedRoute from './ProtectedRoute';
 import LandingPage from './pages/LandingPage.jsx';
 import OrdersPage from './pages/OrdersPage.jsx';
-
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { messaging, onMessage } from './pages/firebaseConfig';
 const App = () => {
+
+  useEffect(() => {
+    onMessage(messaging, (payload) => {
+      console.log('Message received. ', payload);
+      const { title, body } = payload.notification;
+      toast.info(`${title}: ${body}`, {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
+    });
+  }, []);
+
+
   return (
     <ThemeProvider theme={theme}>
+       <ToastContainer />
       <CssBaseline />
       <Router>
         <Routes>

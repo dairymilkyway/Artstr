@@ -5,7 +5,7 @@ const Product = require('../models/Product');
 const Cart = require('../models/Cart');
 const authMiddleware = require('../middleware/authMiddleware');
 const sendTransactionEmail = require('../utils/email');
-
+const sendTransactionUpdateNotification = require('../utils/notifications');
 
 // Get orders containing a specific product for the authenticated user
 router.get('/', authMiddleware, async (req, res) => {
@@ -105,7 +105,7 @@ router.put('/:id/status', authMiddleware, async (req, res) => {
     const { status } = req.body;
     const orderId = req.params.id;
 
-    const order = await Order.findById(orderId);
+    const order = await Order.findById(orderId).populate('user');
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
@@ -117,6 +117,9 @@ router.put('/:id/status', authMiddleware, async (req, res) => {
       order.deliveredAt = null;
     }
     await order.save();
+
+    // Send notification
+    await sendTransactionUpdateNotification(orderId, status);
 
     res.status(200).json({ message: 'Order status updated successfully', order });
   } catch (error) {

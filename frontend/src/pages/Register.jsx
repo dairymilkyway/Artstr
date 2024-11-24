@@ -10,6 +10,9 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import '../styles/logreg.css';
 import { Link } from 'react-router-dom';
+import { getMessaging, getToken } from "firebase/messaging";
+import { messaging } from './firebaseConfig'; // Import the messaging instance
+
 
 const Register = () => {
   const navigate = useNavigate();
@@ -32,39 +35,49 @@ const Register = () => {
     resolver: yupResolver(schema),
   });
 
+  const getFcmToken = async () => {
+    try {
+      const currentToken = await getToken(messaging, { vapidKey: 'BL9I7rufDPvwTz0E7HqbjOSxMI7zGnFQlA3xm8q4-J5YFtmH92Z6n5HE2nIhK3y8CbMD8szsQs7aD0SngQZV6qM' });
+      if (currentToken) {
+        return currentToken;
+      } else {
+        console.error('No registration token available. Request permission to generate one.');
+      }
+    } catch (error) {
+      console.error('An error occurred while retrieving token. ', error);
+    }
+  };
+  
   const onSubmit = async (data) => {
     try {
+      const fcmToken = await getFcmToken();
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       const token = await userCredential.user.getIdToken();
-
-      // Prepare form data
+  
       const formData = new FormData();
       formData.append('token', token);
       formData.append('name', data.name);
       formData.append('email', data.email);
       formData.append('mobileNumber', data.mobileNumber);
       formData.append('password', data.password);
+      formData.append('fcmToken', fcmToken); // Append FCM token
       if (profilePicture) {
         formData.append('profilePicture', profilePicture);
       }
-
-      // Send the form data to your backend
+  
       const response = await axios.post('http://localhost:5000/api/auth/register', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-
-      // Show success notification
+  
       toast.success('Registration successful! Redirecting to login...', {
         position: 'top-right',
         autoClose: 3000,
       });
-
-      // Redirect to login after 3 seconds
+  
       setTimeout(() => navigate('/login'), 3000);
     } catch (error) {
-      // Show error notification
       toast.error(error.response?.data?.message || 'Something went wrong!', {
         position: 'top-right',
         autoClose: 5000,

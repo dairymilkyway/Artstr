@@ -10,7 +10,11 @@ const userSchema = new mongoose.Schema({
   profilePicture: { 
     type: String, 
     default: 'default-profile.png' // Default placeholder image
-  }
+  },
+  fcmToken: {
+    type: String,
+    default: null,
+  },
 });
 
 // Hash password before saving

@@ -12,6 +12,7 @@ import '../styles/logreg.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGoogle } from '@fortawesome/free-brands-svg-icons';
 import { Link } from 'react-router-dom';
+import { getMessaging, getToken } from "firebase/messaging";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -31,28 +32,38 @@ const Login = () => {
     resolver: yupResolver(schema),
   });
 
+  const getFcmToken = async () => {
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const currentToken = await getToken(messaging, { vapidKey: 'BL9I7rufDPvwTz0E7HqbjOSxMI7zGnFQlA3xm8q4-J5YFtmH92Z6n5HE2nIhK3y8CbMD8szsQs7aD0SngQZV6qM', serviceWorkerRegistration: registration });
+      if (currentToken) {
+        return currentToken;
+      } else {
+        console.error('No registration token available. Request permission to generate one.');
+      }
+    } catch (error) {
+      console.error('An error occurred while retrieving token. ', error);
+    }
+  };
+
   const onSubmit = async (data) => {
     try {
+      const fcmToken = await getFcmToken();
       const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
       const token = await userCredential.user.getIdToken();
 
-      // Send the token to your backend
-      const response = await axios.post('http://localhost:5000/api/auth/login', { token });
+      const response = await axios.post('http://localhost:5000/api/auth/login', { token, fcmToken });
 
-      // Store the backend token in localStorage
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('userId', response.data.userId);
-      
-      // Show success notification
+
       toast.success('Login successful! Redirecting...', {
         position: 'top-right',
         autoClose: 3000,
       });
 
-      // Redirect to dashboard after 3 seconds
       setTimeout(() => navigate('/dashboard'), 3000);
     } catch (error) {
-      // Show error notification
       toast.error(error.response?.data?.message || 'Invalid email or password', {
         position: 'top-right',
         autoClose: 5000,
@@ -60,13 +71,13 @@ const Login = () => {
     }
   };
 
-
   const handleGoogleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const token = await result.user.getIdToken();
+      const fcmToken = await getFcmToken();
 
-      const response = await axios.post('http://localhost:5000/api/auth/login', { token });
+      const response = await axios.post('http://localhost:5000/api/auth/login', { token, fcmToken });
       localStorage.setItem('token', response.data.token);
 
       toast.success('Login successful! Redirecting...', {
@@ -83,7 +94,6 @@ const Login = () => {
       });
     }
   };
-
 
   return (
     <div className="login-container">
@@ -127,7 +137,6 @@ const Login = () => {
           <Link to="/register">Register</Link>
         </div>
       </div>
-
     </div>
   );
 };

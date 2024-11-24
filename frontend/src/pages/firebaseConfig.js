@@ -1,5 +1,7 @@
+// src/firebaseConfig.js
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getMessaging, onMessage } from 'firebase/messaging';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAuAHNRTGWyL-y8QGwX43YGED5j8n2HIf0",
@@ -14,5 +16,17 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
+const messaging = getMessaging(app);
 
-export { auth, googleProvider };
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker
+    .register('/firebase-messaging-sw.js')
+    .then((registration) => {
+      console.log('Service Worker registered with scope:', registration.scope);
+    })
+    .catch((err) => {
+      console.error('Service Worker registration failed: ', err);
+    });
+}
+
+export { auth, googleProvider, messaging, onMessage };

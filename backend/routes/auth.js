@@ -27,9 +27,8 @@ const authMiddleware = async (req, res, next) => {
 };
 
 // Register Route
-// Register Route
 router.post('/register', upload.single('profilePicture'), async (req, res) => {
-  const { token, name, email, mobileNumber, password } = req.body;
+  const { token, name, email, mobileNumber, password, fcmToken } = req.body;
 
   try {
     const decodedToken = await admin.auth().verifyIdToken(token);
@@ -44,6 +43,7 @@ router.post('/register', upload.single('profilePicture'), async (req, res) => {
       mobileNumber,
       password: hashedPassword,
       profilePicture: req.file ? req.file.path : null,
+      fcmToken, // Save FCM token
     });
 
     await newUser.save();
@@ -56,14 +56,46 @@ router.post('/register', upload.single('profilePicture'), async (req, res) => {
 
     res.status(201).json({ message: 'User created successfully', token: jwtToken });
   } catch (error) {
-    console.error('Error during registration:', error); // Add detailed logging
+    console.error('Error during registration:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Login Route
+
+// router.post('/login', async (req, res) => {
+//   const { email, password, fcmToken } = req.body;
+
+//   try {
+//     const user = await User.findOne({ email });
+//     if (!user) {
+//       return res.status(404).json({ message: 'User not found' });
+//     }
+
+//     const isMatch = await bcrypt.compare(password, user.password);
+//     if (!isMatch) {
+//       return res.status(400).json({ message: 'Invalid credentials' });
+//     }
+
+//     user.fcmToken = fcmToken; // Update FCM token
+//     await user.save();
+
+//     const jwtToken = jwt.sign(
+//       { id: user._id },
+//       process.env.JWT_SECRET,
+//       { expiresIn: '24h' }
+//     );
+
+//     res.status(200).json({ message: 'Login successful', token: jwtToken });
+//   } catch (error) {
+//     console.error('Error during login:', error);
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// });
+
+// // Login Route Google
+// Login Route Google
 router.post('/login', async (req, res) => {
-  const { email, password, token } = req.body;
+  const { email, password, token } = req.body; // Removed fcmToken from request body
 
   try {
     let user;
@@ -83,10 +115,10 @@ router.post('/login', async (req, res) => {
         // If user doesn't exist, create a new user for Google login
         console.log('Creating new user for Google login');
         user = new User({
-          name: 'GoogleUser',
+          name: decodedToken.name || 'GoogleUser',
           email: googleEmail,
           mobileNumber: 'N/A',
-          password: 'N/A',
+          password: 'N/A', // Google login does not use a password
           userType: 'user',
           profilePicture: decodedToken.picture || 'default-profile.png',
         });
@@ -118,7 +150,7 @@ router.post('/login', async (req, res) => {
 
     console.log('Login successful for email:', user.email);
 
-    // Include userId in the response
+    // Include userId and other relevant details in the response
     res.json({
       token: jwtToken,
       userId: user._id, // Add userId here
@@ -129,6 +161,7 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
 
 
 
