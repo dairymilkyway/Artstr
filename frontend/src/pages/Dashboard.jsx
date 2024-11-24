@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Typography, CircularProgress, Grid, Box, TextField, MenuItem, Slider, Select } from '@mui/material';
+import { CircularProgress, Grid, Box, Typography, Slider, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import ProductCard from '../components/ProductCard';
 import Navbar from '../components/Navbar';
 import { toast, ToastContainer } from 'react-toastify';
@@ -10,40 +10,22 @@ import './Dashboard.css'; // Import custom styles
 
 const Dashboard = () => {
   const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
 
-  // Filters
-  const [priceRange, setPriceRange] = useState([0, 1000]);
-  const [category, setCategory] = useState('');
-  const [rating, setRating] = useState(0);
-  const [categories, setCategories] = useState([]);
+  const [priceRange, setPriceRange] = useState([0, 1000]); // Default price range
+  const [ratingFilter, setRatingFilter] = useState(0); // Default no rating filter
 
   const getToken = () => localStorage.getItem('token');
-
-  const fetchCategories = async () => {
-    try {
-      const response = await axios.get('http://localhost:5000/api/categories', {
-        headers: { Authorization: getToken() },
-      });
-      setCategories(response.data.categories || []);
-    } catch (err) {
-      console.error('Failed to fetch categories:', err);
-    }
-  };
 
   const fetchProducts = async (page = 1, reset = false) => {
     setLoading(true);
     try {
       const response = await axios.get('http://localhost:5000/api/products', {
-        params: {
-          page,
-          priceRange: priceRange.join(','), // Format as "min,max"
-          category,
-          rating,
-        },
+        params: { page },
         headers: { Authorization: getToken() },
       });
       const { products: newProducts, totalPages } = response.data;
@@ -63,6 +45,29 @@ const Dashboard = () => {
     }
   };
 
+  const filterProducts = () => {
+    const filtered = products.filter((product) => {
+      // Apply price range filter
+      const matchesPriceRange =
+        product.price >= priceRange[0] && product.price <= priceRange[1];
+
+      // Apply rating filter
+      const matchesRating = ratingFilter > 0 ? product.averageRating >= ratingFilter : true;
+
+      return matchesPriceRange && matchesRating;
+    });
+
+    setFilteredProducts(filtered);
+  };
+
+  const handlePriceChange = (event, newValue) => {
+    setPriceRange(newValue);
+  };
+
+  const handleRatingChange = (event) => {
+    setRatingFilter(event.target.value); // Set rating filter to the selected value
+  };
+
   const addToCart = async (productId, quantity) => {
     try {
       await axios.post(
@@ -77,17 +82,15 @@ const Dashboard = () => {
     }
   };
 
-  // Update filters and reset products
-  const handleFilterChange = () => {
-    setPage(1);
-    setHasMore(true);
-    fetchProducts(1, true); // Reset products with new filters
-  };
-
+  // Fetch products when page changes
   useEffect(() => {
     fetchProducts(page);
-    fetchCategories();
   }, [page]);
+
+  // Filter products when priceRange or ratingFilter changes
+  useEffect(() => {
+    filterProducts();
+  }, [priceRange, ratingFilter, products]);
 
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -96,54 +99,82 @@ const Dashboard = () => {
         <Navbar />
       </Box>
 
-      {/* Filters Section */}
-      <Box sx={{ padding: 3, backgroundColor: '#f5f5f5', display: 'flex', gap: 2, alignItems: 'center' }}>
-        <TextField
-          select
-          label="Category"
-          value={category}
-          onChange={(e) => {
-            setCategory(e.target.value);
-            handleFilterChange();
-          }}
-          sx={{ minWidth: 150 }}
-        >
-          <MenuItem value="">All</MenuItem>
-          {categories.map((cat) => (
-            <MenuItem key={cat.id} value={cat.name}>
-              {cat.name}
-            </MenuItem>
-          ))}
-        </TextField>
+ {/* Filters Section */}
+<Box
+  sx={{
+    padding: 3,
+    backgroundColor: '#121212',
+    borderRadius: 10,
+    boxShadow: 2,
+    marginTop: 3,
+    marginBottom: 3,
 
-        <Slider
-          value={priceRange}
-          onChange={(e, newValue) => setPriceRange(newValue)}
-          onChangeCommitted={handleFilterChange} // Trigger API call after final value
-          valueLabelDisplay="auto"
-          max={1000}
-          sx={{ width: 200 }}
-          aria-labelledby="price-range-slider"
-        />
-        <Typography>Price: ${priceRange[0]} - ${priceRange[1]}</Typography>
+  }}
+>
+  <Typography variant="h6" gutterBottom sx={{ color: '#FFFFFF' }}>
+    Price Range
+  </Typography>
+  <Slider
+    value={priceRange}
+    onChange={handlePriceChange}
+    valueLabelDisplay="auto"
+    min={0}
+    max={1000}
+    step={10}
+    sx={{
+      marginBottom: 3,
+      '& .MuiSlider-thumb': {
+        color: '#1DB954',
+      },
+      '& .MuiSlider-track': {
+        color: '#1DB954',
+      },
+      '& .MuiSlider-rail': {
+        color: '#444',
+      },
+    }}
+  />
 
-        <Select
-          value={rating}
-          onChange={(e) => {
-            setRating(e.target.value);
-            handleFilterChange();
-          }}
-          displayEmpty
-          sx={{ minWidth: 120 }}
-        >
-          <MenuItem value={0}>All Ratings</MenuItem>
-          <MenuItem value={1}>1 Star & Up</MenuItem>
-          <MenuItem value={2}>2 Stars & Up</MenuItem>
-          <MenuItem value={3}>3 Stars & Up</MenuItem>
-          <MenuItem value={4}>4 Stars & Up</MenuItem>
-          <MenuItem value={5}>5 Stars</MenuItem>
-        </Select>
-      </Box>
+  <Typography variant="h6" gutterBottom sx={{ color: '#FFFFFF' }}>
+    Minimum Rating
+  </Typography>
+  <FormControl fullWidth>
+    <InputLabel sx={{ color: '#FFFFFF' }}>Rating</InputLabel>
+    <Select
+  value={ratingFilter}
+  onChange={handleRatingChange}
+  label="Rating"
+  sx={{
+    marginBottom: 2,
+    color: '#FFFFFF',
+    '.MuiOutlinedInput-notchedOutline': {
+      borderColor: '#1DB954',
+    },
+    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+      borderColor: '#1DB954',
+    },
+    '&:hover .MuiOutlinedInput-notchedOutline': {
+      borderColor: '#1DB954',
+    },
+  }}
+  MenuProps={{
+    PaperProps: {
+      sx: {
+        backgroundColor: '#121212',
+        color: '#FFFFFF',
+      },
+    },
+  }}
+>
+  <MenuItem value={0} sx={{ color: '#FFFFFF' }}>All Ratings</MenuItem>
+  <MenuItem value={1} sx={{ color: '#FFFFFF' }}>1 Star and above</MenuItem>
+  <MenuItem value={2} sx={{ color: '#FFFFFF' }}>2 Stars and above</MenuItem>
+  <MenuItem value={3} sx={{ color: '#FFFFFF' }}>3 Stars and above</MenuItem>
+  <MenuItem value={4} sx={{ color: '#FFFFFF' }}>4 Stars and above</MenuItem>
+  <MenuItem value={5} sx={{ color: '#FFFFFF' }}>5 Stars</MenuItem>
+</Select>
+  </FormControl>
+</Box>
 
       {/* Product List */}
       <Box
@@ -160,7 +191,7 @@ const Dashboard = () => {
         {error && <Typography color="error">{error}</Typography>}
 
         <InfiniteScroll
-          dataLength={products.length}
+          dataLength={filteredProducts.length}
           next={() => setPage((prevPage) => prevPage + 1)}
           hasMore={hasMore}
           loader={<CircularProgress />}
@@ -173,7 +204,7 @@ const Dashboard = () => {
           className="infinite-scroll"
         >
           <Grid container spacing={3}>
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <Grid item key={product.id} xs={12} sm={6} md={4} lg={3}>
                 <ProductCard product={product} onAddToCart={() => addToCart(product._id, 1)} />
               </Grid>
