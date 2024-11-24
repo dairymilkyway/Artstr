@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import MUIDataTable from 'mui-datatables';
 import axios from 'axios';
-import { ThemeProvider, createTheme, Select, MenuItem, Button } from '@mui/material';
+import { ThemeProvider, createTheme, Select, MenuItem } from '@mui/material';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Sidebar from './Sidebar';
@@ -24,7 +24,7 @@ const AdminOrders = () => {
   const fetchOrders = async () => {
     try {
       const response = await axios.get('http://localhost:5000/api/orders', {
-        headers: { Authorization: getToken() },
+        headers: { Authorization: `Bearer ${getToken()}` },
       });
       setOrders(response.data);
     } catch (error) {
@@ -40,7 +40,7 @@ const AdminOrders = () => {
   const updateOrderStatus = async (orderId, status) => {
     try {
       await axios.put(`http://localhost:5000/api/orders/${orderId}/status`, { status }, {
-        headers: { Authorization: getToken() },
+        headers: { Authorization: `Bearer ${getToken()}` },
       });
       toast.success('Order status updated successfully', { position: 'top-right' });
       fetchOrders();
@@ -86,7 +86,12 @@ const AdminOrders = () => {
         <Sidebar />
         <div className="admin-dashboard">
           <h1 className="title">Manage Orders</h1>
-          <MUIDataTable title="Orders" data={orders} columns={columns} options={{ selectableRows: 'none' }} />
+          <MUIDataTable
+            title={"Orders List"}
+            data={orders}
+            columns={columns}
+            options={{ selectableRows: 'none' }}
+          />
         </div>
       </div>
     </ThemeProvider>

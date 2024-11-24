@@ -10,11 +10,11 @@ const sendTransactionEmail = require('../utils/email');
 // Get orders containing a specific product for the authenticated user
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const { productId } = req.query;
-    const orders = await Order.find({ user: req.user.id, 'items.product': productId });
+    const orders = await Order.find().populate('user', 'name').populate('items.product', 'name price');
     res.status(200).json(orders);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch orders', error });
+    console.error('Error fetching orders:', error.message);
+    res.status(500).json({ message: 'Failed to fetch orders' });
   }
 });
 
@@ -100,6 +100,28 @@ router.post('/checkout', authMiddleware, async (req, res) => {
   }
 });
 
-  
+router.put('/:id/status', authMiddleware, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const orderId = req.params.id;
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    order.status = status;
+    if (status === 'delivered') {
+      order.deliveredAt = new Date();
+    }
+    await order.save();
+
+    res.status(200).json({ message: 'Order status updated successfully', order });
+  } catch (error) {
+    console.error('Error updating order status:', error.message);
+    res.status(500).json({ message: 'Failed to update order status' });
+  }
+});
+
 
 module.exports = router;
