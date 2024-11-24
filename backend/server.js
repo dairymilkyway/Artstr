@@ -11,7 +11,6 @@ const orderRoutes = require('./routes/orders');
 const productRoutes = require('./routes/product');
 const cartRouter = require('./routes/cart');
 const userRoutes = require('./routes/user'); // Import the user routes
-const ratingsRoutes = require('./routes/ratings'); // Corrected path to ratings routes
 
 dotenv.config();
 
@@ -33,7 +32,6 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRouter);
 app.use('/api/users', userRoutes);
-app.use('/api', ratingsRoutes); // Register the ratings routes
 
 const PORT = process.env.PORT || 5000;
 
@@ -44,6 +42,7 @@ mongoose.connect(process.env.MONGO_URI, {
   .then(() => {
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
+      console.log('Connected to MongoDB');
     });
   })
   .catch((error) => {

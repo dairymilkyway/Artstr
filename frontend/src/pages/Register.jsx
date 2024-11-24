@@ -17,6 +17,7 @@ const Register = () => {
 
   // Validation schema using Yup
   const schema = yup.object().shape({
+    name: yup.string().required('Name is required'),
     email: yup.string().email('Invalid email address').required('Email is required'),
     mobileNumber: yup.string().matches(/^[0-9]{10}$/, 'Mobile number must be 10 digits').required('Mobile number is required'),
     password: yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
@@ -39,6 +40,7 @@ const Register = () => {
       // Prepare form data
       const formData = new FormData();
       formData.append('token', token);
+      formData.append('name', data.name);
       formData.append('email', data.email);
       formData.append('mobileNumber', data.mobileNumber);
       formData.append('password', data.password);
@@ -87,6 +89,16 @@ const Register = () => {
       <div className="register-box">
         <h2>Register</h2>
         <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="input-group">
+            <input
+              type="text"
+              name="name"
+              placeholder="Name"
+              {...register('name')}
+              className="input-field"
+            />
+            {errors.name && <span className="floating-error">{errors.name.message}</span>}
+          </div>
           <div className="input-group">
             <input
               type="email"

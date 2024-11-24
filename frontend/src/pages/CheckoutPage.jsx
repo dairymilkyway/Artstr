@@ -28,8 +28,7 @@ const CheckoutPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    name: '',
     phoneNumber: '',
     email: '',
     address: '',
@@ -48,8 +47,7 @@ const CheckoutPage = () => {
         const user = response.data.user;
         setFormData((prevData) => ({
           ...prevData,
-          firstName: user.firstName || '',
-          lastName: user.lastName || '',
+          name: user.name || '',
           phoneNumber: user.mobileNumber || '',
           email: user.email || '',
         }));
@@ -80,16 +78,16 @@ const CheckoutPage = () => {
   const handleCheckout = async () => {
     setLoading(true);
     setError(null);
-  
+
     try {
       const token = localStorage.getItem('token');
-  
+
       const response = await axios.post(
         'http://localhost:5000/api/orders/checkout',
         { ...formData, items: items.map(item => ({ productId: item.product._id, quantity: item.quantity })) },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-  
+
       navigate('/dashboard', { state: { message: 'Checkout successful!' } }); // Redirect to dashboard with message
     } catch (error) {
       setError('Failed to process checkout');
@@ -168,20 +166,11 @@ const CheckoutPage = () => {
             <Box sx={{ overflowY: 'auto', maxHeight: '50vh' }}>
               <form>
                 <TextField
-                  label="First Name"
-                  name="firstName"
+                  label="Name"
+                  name="name"
                   variant="outlined"
                   fullWidth
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  sx={{ mb: 2, '& .MuiInputBase-input': { color: '#fff' }, '& .MuiInputLabel-root': { color: '#fff' }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: '#fff' }, '&:hover fieldset': { borderColor: '#ccc' }, '&.Mui-focused fieldset': { borderColor: '#fff' } } }}
-                />
-                <TextField
-                  label="Last Name"
-                  name="lastName"
-                  variant="outlined"
-                  fullWidth
-                  value={formData.lastName}
+                  value={formData.name}
                   onChange={handleChange}
                   sx={{ mb: 2, '& .MuiInputBase-input': { color: '#fff' }, '& .MuiInputLabel-root': { color: '#fff' }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: '#fff' }, '&:hover fieldset': { borderColor: '#ccc' }, '&.Mui-focused fieldset': { borderColor: '#fff' } } }}
                 />

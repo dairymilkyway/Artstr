@@ -27,35 +27,29 @@ const authMiddleware = async (req, res, next) => {
 };
 
 // Register Route
+// Register Route
 router.post('/register', upload.single('profilePicture'), async (req, res) => {
-  const { token, email, mobileNumber, password } = req.body;
-  const profilePicture = req.file;
+  const { token, name, email, mobileNumber, password } = req.body;
 
   try {
-    // Verify the Firebase ID token
     const decodedToken = await admin.auth().verifyIdToken(token);
+    const firebaseUid = decodedToken.uid;
 
-    // Check if email already exists
-    const existingEmail = await User.findOne({ email });
-    if (existingEmail) return res.status(400).json({ message: 'Email already in use' });
-
-    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user with default userType
     const newUser = new User({
+      firebaseUid,
+      name,
       email,
       mobileNumber,
-      password: hashedPassword, // Save hashed password
-      userType: 'user', // Default user type
-      profilePicture: profilePicture ? profilePicture.path : 'default-profile.png',
+      password: hashedPassword,
+      profilePicture: req.file ? req.file.path : null,
     });
 
     await newUser.save();
 
-    // Generate JWT token
     const jwtToken = jwt.sign(
-      { userId: newUser._id, userType: newUser.userType },
+      { id: newUser._id },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -66,7 +60,6 @@ router.post('/register', upload.single('profilePicture'), async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
-
 
 // Login Route
 router.post('/login', async (req, res) => {

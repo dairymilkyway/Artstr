@@ -26,11 +26,21 @@ const sendTransactionEmail = async (order) => {
             <td style="padding: 8px; border: 1px solid #ddd; color: #fff;">${item.product.name}</td>
             <td style="padding: 8px; border: 1px solid #ddd; color: #fff;">${item.quantity}</td>
             <td style="padding: 8px; border: 1px solid #ddd; color: #fff;">$${item.product.price.toFixed(2)}</td>
-            <td style="padding: 8px; border: 1px solid #ddd; color: #fff;">$${(item.product.price * item.quantity).toFixed(2)}</td>
           </tr>
         `
       )
       .join('');
+
+    // Calculate the shipping fee based on the courier
+    let shippingFee = 0;
+    if (order.courier === 'J&T Express') {
+      shippingFee = 10;
+    } else if (order.courier === 'Ninja Van') {
+      shippingFee = 15;
+    }
+
+    // Calculate the subtotal
+    const subtotal = populatedOrder.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 
     // Prepare email content
     const mailOptions = {
@@ -46,7 +56,6 @@ const sendTransactionEmail = async (order) => {
           <h1 style="color: #191414; margin: 0;">Order Confirmation</h1>
           <p style="color: #191414; font-size: 1.1rem; margin: 10px 0 20px;">Thank you for shopping with Artstr, ${order.name}!</p>
         </div>
-
         <div style="max-width: 600px; margin: 20px auto; background: #191414; border-radius: 10px; padding: 20px;">
           <h2 style="color: #1DB954;">Order Details</h2>
           <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
@@ -56,7 +65,6 @@ const sendTransactionEmail = async (order) => {
                 <th style="padding: 8px; border: 1px solid #ddd; background-color: #1DB954; color: #191414;">Product</th>
                 <th style="padding: 8px; border: 1px solid #ddd; background-color: #1DB954; color: #191414;">Quantity</th>
                 <th style="padding: 8px; border: 1px solid #ddd; background-color: #1DB954; color: #191414;">Price</th>
-                <th style="padding: 8px; border: 1px solid #ddd; background-color: #1DB954; color: #191414;">Total</th>
               </tr>
             </thead>
             <tbody>
@@ -64,12 +72,12 @@ const sendTransactionEmail = async (order) => {
             </tbody>
           </table>
           <div style="margin-top: 20px;">
-            <p style="color: #fff;"><strong>Subtotal:</strong> $${order.totalPrice.toFixed(2)}</p>
+            <p style="color: #fff;"><strong>Subtotal:</strong> $${subtotal.toFixed(2)}</p>
             <p style="color: #fff;"><strong>Courier:</strong> ${order.courier}</p>
+            <p style="color: #fff;"><strong>Shipping Fee:</strong> $${shippingFee.toFixed(2)}</p>
             <p style="color: #fff;"><strong>Grand Total:</strong> $${order.totalPrice.toFixed(2)}</p>
           </div>
         </div>
-
         <div style="max-width: 600px; margin: 20px auto; background: #1DB954; border-radius: 10px; padding: 15px; text-align: center;">
           <p style="color: #191414; font-size: 1rem; margin: 0;">We hope you enjoy your purchase!</p>
           <p style="color: #191414; font-size: 0.9rem;">For any questions, contact us at support@artstr.com</p>
