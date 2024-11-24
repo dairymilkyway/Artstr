@@ -113,6 +113,8 @@ router.put('/:id/status', authMiddleware, async (req, res) => {
     order.status = status;
     if (status === 'delivered') {
       order.deliveredAt = new Date();
+    } else if (status === 'canceled') {
+      order.deliveredAt = null;
     }
     await order.save();
 
@@ -123,7 +125,7 @@ router.put('/:id/status', authMiddleware, async (req, res) => {
   }
 });
 
-router.get('/page', authMiddleware, async (req, res) => {
+router.get('/user-orders', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
     const { page = 1, limit = 10 } = req.query;
@@ -142,6 +144,5 @@ router.get('/page', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch orders' });
   }
 });
-
 
 module.exports = router;

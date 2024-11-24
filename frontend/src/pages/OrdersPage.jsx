@@ -10,6 +10,7 @@ import {
   TableRow,
   Paper,
   Pagination,
+  Button,
   styled,
 } from '@mui/material';
 import axios from 'axios';
@@ -39,16 +40,6 @@ const StyledTableRow = styled(TableRow)({
 const StyledPagination = styled(Pagination)({
   '& .MuiPaginationItem-root': {
     color: '#b3b3b3',
-    '&.Mui-selected': {
-      backgroundColor: '#1DB954',
-      color: '#fff',
-      '&:hover': {
-        backgroundColor: '#1ed760',
-      },
-    },
-    '&:hover': {
-      backgroundColor: '#282828',
-    },
   },
 });
 
@@ -59,7 +50,7 @@ const OrdersPage = () => {
 
   const fetchOrders = async (page) => {
     try {
-      const response = await axios.get(`/api/orders/page?page=${page}&limit=10`, {
+      const response = await axios.get(`http://localhost:5000/api/orders/user-orders?page=${page}&limit=10`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
@@ -80,6 +71,30 @@ const OrdersPage = () => {
 
   const handlePageChange = (event, value) => {
     setPage(value);
+  };
+
+  const updateOrderStatus = async (orderId, status) => {
+    try {
+      await axios.put(`http://localhost:5000/api/orders/${orderId}/status`, { status }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
+      fetchOrders(page); // Refresh orders after status update
+    } catch (error) {
+      console.error('Error updating order status:', error.response?.data?.message || error.message);
+    }
+  };
+
+  const handleDelivered = (orderId) => {
+    updateOrderStatus(orderId, 'delivered');
+  };
+
+  const handleCanceled = (orderId) => {
+    updateOrderStatus(orderId, 'canceled');
+  };
+
+  const formatDate = (date) => {
+    const d = new Date(date);
+    return d.toISOString().split('T')[0]; // Format date as yyyy-mm-dd
   };
 
   return (
@@ -120,7 +135,9 @@ const OrdersPage = () => {
                 <StyledTableCell>Name</StyledTableCell>
                 <StyledTableCell>Total Price</StyledTableCell>
                 <StyledTableCell>Status</StyledTableCell>
-                <StyledTableCell>Date</StyledTableCell>
+                <StyledTableCell>Order Date</StyledTableCell>
+                <StyledTableCell>Delivery Date</StyledTableCell>
+                <StyledTableCell>Actions</StyledTableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -133,19 +150,40 @@ const OrdersPage = () => {
                     <StyledTableCell>
                       <Box 
                         sx={{ 
-                          color: '#1DB954',
+                          color: order.status === 'delivered' ? '#1DB954' : order.status === 'canceled' ? '#f44336' : '#fff',
                           fontWeight: 'medium'
                         }}
                       >
                         {order.status}
                       </Box>
                     </StyledTableCell>
-                    <StyledTableCell>{new Date(order.date).toLocaleDateString()}</StyledTableCell>
+                    <StyledTableCell>{formatDate(order.date)}</StyledTableCell>
+                    <StyledTableCell>{order.status === 'delivered' ? formatDate(order.deliveredAt) : 'N/A'}</StyledTableCell>
+                    <StyledTableCell>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => handleDelivered(order._id)}
+                        sx={{ mr: 1 }}
+                        disabled={order.status === 'delivered'}
+                      >
+                        Delivered
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="secondary"
+                        onClick={() => handleCanceled(order._id)}
+                        sx={{ backgroundColor: '#f44336', '&:hover': { backgroundColor: '#d32f2f' } }}
+                        disabled={order.status === 'delivered'}
+                      >
+                        Canceled
+                      </Button>
+                    </StyledTableCell>
                   </StyledTableRow>
                 ))
               ) : (
                 <StyledTableRow>
-                  <StyledTableCell colSpan={5} align="center">
+                  <StyledTableCell colSpan={7} align="center">
                     No orders found.
                   </StyledTableCell>
                 </StyledTableRow>

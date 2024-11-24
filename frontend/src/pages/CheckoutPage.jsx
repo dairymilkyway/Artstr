@@ -133,7 +133,7 @@ const CheckoutPage = () => {
             {error}
           </Alert>
         ) : (
-          <>
+          <Box sx={{ overflowY: 'auto', maxHeight: '70vh' }}>
             <List>
               {items.map((item) => (
                 <ListItem key={item.product._id} sx={{ mb: 2, bgcolor: '#1c1c1c', borderRadius: 2, p: 2 }}>
@@ -247,7 +247,7 @@ const CheckoutPage = () => {
                 </Button>
               </form>
             </Box>
-          </>
+          </Box>
         )}
       </Container>
     </Box>

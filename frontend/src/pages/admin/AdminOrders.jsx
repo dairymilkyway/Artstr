@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import MUIDataTable from 'mui-datatables';
 import axios from 'axios';
-import { ThemeProvider, createTheme, Select, MenuItem } from '@mui/material';
+import { ThemeProvider, createTheme, Button, Box } from '@mui/material';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Sidebar from './Sidebar';
@@ -50,9 +50,13 @@ const AdminOrders = () => {
     }
   };
 
-  const handleOrderStatusChange = (orderId, event) => {
-    const newStatus = event.target.value;
-    updateOrderStatus(orderId, newStatus);
+  const handleOrderStatusChange = (orderId, status) => {
+    updateOrderStatus(orderId, status);
+  };
+
+  const formatDate = (date) => {
+    const d = new Date(date);
+    return d.toISOString().split('T')[0]; // Format date as yyyy-mm-dd
   };
 
   const columns = [
@@ -60,23 +64,56 @@ const AdminOrders = () => {
     { name: 'totalPrice', label: 'Total Price' },
     { name: 'courier', label: 'Courier' },
     { name: 'status', label: 'Status', options: {
+      customBodyRender: (value) => {
+        let color;
+        if (value === 'delivered') {
+          color = '#1DB954'; // Green
+        } else if (value === 'canceled') {
+          color = '#f44336'; // Red
+        } else {
+          color = '#fff'; // Default color
+        }
+        return <Box sx={{ color, fontWeight: 'medium' }}>{value}</Box>;
+      },
+    }},
+    { name: 'date', label: 'Order Date', options: {
+      customBodyRender: (value) => formatDate(value),
+    }},
+    { name: 'deliveredAt', label: 'Delivery Date', options: {
+      customBodyRender: (value, tableMeta) => {
+        const rowIndex = tableMeta.rowIndex;
+        const order = orders[rowIndex];
+        return order.status === 'delivered' ? formatDate(order.deliveredAt) : 'N/A';
+      },
+    }},
+    { name: 'actions', label: 'Actions', options: {
       customBodyRender: (value, tableMeta) => {
         const rowIndex = tableMeta.rowIndex;
         const order = orders[rowIndex];
         return (
-          <Select
-            value={order.status}
-            onChange={(event) => handleOrderStatusChange(order._id, event)}
-          >
-            <MenuItem value="pending">Pending</MenuItem>
-            <MenuItem value="shipped">Shipped</MenuItem>
-            <MenuItem value="delivered">Delivered</MenuItem>
-            <MenuItem value="cancelled">Cancelled</MenuItem>
-          </Select>
+          <>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => handleOrderStatusChange(order._id, 'delivered')}
+              sx={{ mr: 1 }}
+              disabled={order.status === 'delivered' || order.status === 'canceled'}
+            >
+              Delivered
+            </Button>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={() => handleOrderStatusChange(order._id, 'canceled')}
+              sx={{ backgroundColor: '#f44336', '&:hover': { backgroundColor: '#d32f2f' } }}
+              disabled={order.status === 'delivered' || order.status === 'canceled'}
+            >
+              Canceled
+            </Button>
+          </>
         );
       },
     }},
-    { name: 'date', label: 'Order Date' },
   ];
 
   return (
