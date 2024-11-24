@@ -123,5 +123,25 @@ router.put('/:id/status', authMiddleware, async (req, res) => {
   }
 });
 
+router.get('/page', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { page = 1, limit = 10 } = req.query;
+
+    const orders = await Order.find({ user: userId })
+      .populate('items.product', 'name price')
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+
+    const totalOrders = await Order.countDocuments({ user: userId });
+    const totalPages = Math.ceil(totalOrders / limit);
+
+    res.status(200).json({ orders, totalPages });
+  } catch (error) {
+    console.error('Error fetching paginated orders:', error.message);
+    res.status(500).json({ message: 'Failed to fetch orders' });
+  }
+});
+
 
 module.exports = router;

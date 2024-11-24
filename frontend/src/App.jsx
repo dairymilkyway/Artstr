@@ -9,11 +9,12 @@ import UserProfile from './pages/UserProfile';
 import AdminReviews from './pages/admin/AdminReviews';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
-import AdminOrders from './pages/admin/AdminOrders'; 
+import AdminOrders from './pages/admin/AdminOrders';
 import AdminDashboard from './pages/admin/AdminDashboard';
-import SalesChart from './pages/admin/SalesChart'; 
+import SalesChart from './pages/admin/SalesChart';
 import ProtectedRoute from './ProtectedRoute';
 import LandingPage from './pages/LandingPage.jsx';
+import OrdersPage from './pages/OrdersPage.jsx';
 
 const App = () => {
   return (
@@ -21,7 +22,7 @@ const App = () => {
       <CssBaseline />
       <Router>
         <Routes>
-         <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route
@@ -49,6 +50,14 @@ const App = () => {
             }
           />
           <Route
+            path="/orders"
+            element={
+              <ProtectedRoute userType="user">
+                <OrdersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/dashboard"
             element={
               <ProtectedRoute userType="user">
@@ -72,7 +81,7 @@ const App = () => {
               </ProtectedRoute>
             }
           />
-           <Route
+          <Route
             path="/admin-reviews"
             element={
               <ProtectedRoute userType="admin">
