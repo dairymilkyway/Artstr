@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import { Drawer, List, ListItem, ListItemText, ListItemIcon, Divider } from '@mui/material';
-import { Home, AccountCircle, RateReview, BarChart, ExitToApp } from '@mui/icons-material'; // Import new icons
+import { Home,ShoppingCart, AccountCircle, RateReview, BarChart, ExitToApp } from '@mui/icons-material'; // Import new icons
 import '../../styles/adminsidebar.css';
 
 const Sidebar = () => {
@@ -38,17 +38,17 @@ const Sidebar = () => {
       </div>
       <Divider />
       <List>
-        <ListItem button onClick={() => navigate('/products')}>
+        <ListItem button onClick={() => navigate('/admin-dashboard')}>
           <ListItemIcon>
             <Home style={{ color: '#1DB954' }} />
           </ListItemIcon>
           <ListItemText primary="Products" />
         </ListItem>
-        <ListItem button onClick={() => navigate('/account')}>
+        <ListItem button onClick={() => navigate('/admin-orders')}>
           <ListItemIcon>
-            <AccountCircle style={{ color: '#1DB954' }} />
+            <ShoppingCart style={{ color: '#1DB954' }} />
           </ListItemIcon>
-          <ListItemText primary="Account" />
+          <ListItemText primary="Manage Orders" />
         </ListItem>
         <ListItem button onClick={() => navigate('/reviews')}>
           <ListItemIcon>

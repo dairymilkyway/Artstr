@@ -57,4 +57,9 @@
     gap: 10px;
     justify-content: flex-end;
   }
-  
+  .date-picker-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    align-items: center;
+  }

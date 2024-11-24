@@ -1,9 +1,9 @@
 require('dotenv').config(); // Load environment variables
 const mongoose = require('mongoose');
 const Product = require('./models/Product'); // Adjust the path to your Product model
-const Rating = require('./models/Ratings'); // Adjust the path to your Rating model
+const User = require('./models/User'); // Assuming you have a User model
 
-// Connect to MongoDB using environment variables
+// Connect to MongoDB
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI, {
@@ -31,41 +31,58 @@ const generateProducts = () => {
         `https://via.placeholder.com/150?text=Product+${i}+Image2`,
       ],
       stocks: Math.floor(Math.random() * 100) + 1, // Random stock between 1 and 100
+      reviews: [], // Placeholder for reviews
     });
   }
   return products;
 };
 
-// Generate Placeholder Ratings
-const generateRatings = async (productId) => {
-  const ratings = [];
-  for (let i = 1; i <= 5; i++) {
-    ratings.push({
-      userId: new mongoose.Types.ObjectId(), // Generate a new ObjectId for user
-      productId: productId,
-      rating: Math.floor(Math.random() * 5) + 1, // Random rating between 1 and 5
-      comment: `Comment ${i} for product ${productId}`,
+// Generate Reviews for a Product
+const generateReviews = async (productId) => {
+  const reviews = [];
+  const users = await User.find().limit(10); // Fetch 10 users for review generation
+  const reviewCount = Math.floor(Math.random() * 5) + 1; // 1 to 5 reviews
+
+  for (let i = 0; i < reviewCount; i++) {
+    const randomUser = users[Math.floor(Math.random() * users.length)];
+    const rating = Math.floor(Math.random() * 5) + 1; // Random rating between 1 and 5
+    const comment = `Review ${i + 1} for product ${productId}`;
+
+    reviews.push({
+      user: randomUser._id,
+      rating,
+      comment,
     });
   }
-  await Rating.insertMany(ratings);
+
+  // Calculate average rating and total ratings
+  const averageRating =
+    reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
+
+  return { reviews, averageRating, totalRatings: reviews.length };
 };
 
 // Seed Function
 const seedProducts = async () => {
   try {
     await Product.deleteMany(); // Clear existing products
-    const products = generateProducts();
-    const insertedProducts = await Product.insertMany(products); // Insert new products
 
-    // Generate ratings for each product
-    for (const product of insertedProducts) {
-      await generateRatings(product._id);
+    const products = generateProducts();
+
+    for (const product of products) {
+      const { reviews, averageRating, totalRatings } = await generateReviews(
+        product._id
+      );
+      product.reviews = reviews;
+      product.averageRating = averageRating.toFixed(1); // Round to 1 decimal
+      product.totalRatings = totalRatings;
     }
 
-    console.log('Products and ratings seeded successfully');
+    await Product.insertMany(products); // Insert products with reviews
+    console.log('Products and reviews seeded successfully');
     process.exit();
   } catch (error) {
-    console.error('Error seeding products and ratings:', error.message);
+    console.error('Error seeding products and reviews:', error.message);
     process.exit(1);
   }
 };

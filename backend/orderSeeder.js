@@ -1,59 +1,57 @@
-require('dotenv').config();
 const mongoose = require('mongoose');
-const Order = require('./models/Order');
-const Product = require('./models/Product');
+const Order = require('./models/Order'); // Assuming you have an Order model
+const User = require('./models/User'); // Assuming you have a User model
+const Product = require('./models/Product'); // Assuming you have a Product model
+const dotenv = require('dotenv');
+dotenv.config();
 
-const connectDB = async () => {
-  try {
-    await mongoose.connect(process.env.MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log('MongoDB connected');
-  } catch (error) {
-    console.error('Error connecting to MongoDB:', error.message);
-    process.exit(1);
-  }
-};
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
 
-const generateOrders = async () => {
-  const products = await Product.find();
+const generateOrderData = async () => {
   const orders = [];
+  const startDate = new Date('2024-01-01');
+  const endDate = new Date('2024-12-31');
+  const users = await User.find();
+  const products = await Product.find();
 
-  for (let i = 0; i < 100; i++) {
+  for (let date = startDate; date <= endDate; date.setDate(date.getDate() + 1)) {
+    const user = users[Math.floor(Math.random() * users.length)];
     const product = products[Math.floor(Math.random() * products.length)];
     const quantity = Math.floor(Math.random() * 10) + 1;
     const totalPrice = product.price * quantity;
-    const date = new Date();
-    date.setMonth(date.getMonth() - Math.floor(Math.random() * 12));
 
     orders.push({
-      product: product._id,
-      quantity,
+      user: user._id,
+      name: user.name || 'John Doe', // Ensure name is populated
+      items: [
+        {
+          product: product._id,
+          quantity,
+          totalPrice,
+        },
+      ],
       totalPrice,
-      date,
+      courier: 'DHL',
+      status: 'pending',
+      date: new Date(date),
+      phoneNumber: user.phoneNumber || '123-456-7890',
+      email: user.email || 'example@example.com',
+      address: user.address || '123 Main St, Anytown, USA',
+      paymentMethod: 'Credit Card',
     });
   }
 
-  return orders;
-};
-
-const seedOrders = async () => {
   try {
-    await Order.deleteMany();
-    const orders = await generateOrders();
     await Order.insertMany(orders);
-    console.log('Orders seeded successfully');
-    process.exit();
+    console.log('Order data seeded successfully');
   } catch (error) {
-    console.error('Error seeding orders:', error.message);
-    process.exit(1);
+    console.error('Error seeding order data:', error);
+  } finally {
+    mongoose.connection.close();
   }
 };
 
-const runSeeder = async () => {
-  await connectDB();
-  await seedOrders();
-};
-
-runSeeder();
+generateOrderData();

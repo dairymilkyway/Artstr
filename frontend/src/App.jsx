@@ -8,8 +8,9 @@ import Dashboard from './pages/Dashboard';
 import UserProfile from './pages/UserProfile';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
+import AdminOrders from './pages/admin/AdminOrders'; 
 import AdminDashboard from './pages/admin/AdminDashboard';
-import SalesChart from './pages/admin/SalesChart'; // Import the new SalesChart page
+import SalesChart from './pages/admin/SalesChart'; 
 import ProtectedRoute from './ProtectedRoute';
 import LandingPage from './pages/LandingPage.jsx';
 
@@ -59,6 +60,14 @@ const App = () => {
             element={
               <ProtectedRoute userType="admin">
                 <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin-orders"
+            element={
+              <ProtectedRoute userType="admin">
+                <AdminOrders />
               </ProtectedRoute>
             }
           />
