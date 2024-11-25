@@ -151,4 +151,19 @@ router.get('/user-orders', authMiddleware, async (req, res) => {
   }
 });
 
+// Get order details by ID
+router.get('/:id', authMiddleware, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate('user', 'name email')
+      .populate('items.product', 'name price photos');
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    res.status(200).json(order);
+  } catch (error) {
+    console.error('Error fetching order details:', error.message);
+    res.status(500).json({ message: 'Failed to fetch order details' });
+  }
+});
 module.exports = router;

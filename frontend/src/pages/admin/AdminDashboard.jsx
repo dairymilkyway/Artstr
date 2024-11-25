@@ -4,7 +4,7 @@ import axios from 'axios';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import IconButton from '@mui/material/IconButton';
-import { ThemeProvider, createTheme, Button, TextField, Modal } from '@mui/material';
+import {  FormControl, ThemeProvider, createTheme, Button, TextField, Modal, Select, MenuItem, InputLabel } from '@mui/material';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -314,23 +314,31 @@ const AdminDashboard = () => {
               helperText={errors.price?.message}
             />
             <TextField
-             label="Stocks"
-             type="number"
-             variant="outlined"
-             fullWidth
-            {...register('stocks')}
-            error={!!errors.stocks}
-            helperText={errors.stocks?.message}
-             />
-
-            <TextField
-              label="Category"
+              label="Stocks"
+              type="number"
               variant="outlined"
               fullWidth
-              {...register('category')}
-              error={!!errors.category}
-              helperText={errors.category?.message}
+              {...register('stocks')}
+              error={!!errors.stocks}
+              helperText={errors.stocks?.message}
             />
+  
+            <FormControl fullWidth>
+              <InputLabel id="category-label">Category</InputLabel>
+              <Select
+                labelId="category-label"
+                id="category"
+                defaultValue=""
+                {...register('category')}
+                error={!!errors.category}
+              >
+                <MenuItem value="Music">Music</MenuItem>
+                <MenuItem value="Album">Album</MenuItem>
+                <MenuItem value="Merchandise">Merchandise</MenuItem>
+              </Select>
+              {errors.category && <p className="error-text">{errors.category.message}</p>}
+            </FormControl>
+  
             <TextField
               label="Details"
               variant="outlined"
@@ -352,7 +360,7 @@ const AdminDashboard = () => {
             </Button>
           </form>
           <MUIDataTable title="Products" data={products} columns={columns} options={options} />
-
+  
           {showModal && selectedProduct && (
             <Modal open={showModal} onClose={() => setShowModal(false)}>
               <div className="modal-content">
@@ -381,25 +389,32 @@ const AdminDashboard = () => {
                     helperText={modalErrors.price?.message}
                   />
                   <TextField
-                     label="Stocks"
-                     type="number"
-                    variant="outlined"
-                      fullWidth
-  defaultValue={selectedProduct.stocks}
-  {...modalRegister('stocks')}
-  error={!!modalErrors.stocks}
-  helperText={modalErrors.stocks?.message}
-/>
-
-                  <TextField
-                    label="Category"
+                    label="Stocks"
+                    type="number"
                     variant="outlined"
                     fullWidth
-                    defaultValue={selectedProduct.category}
-                    {...modalRegister('category')}
-                    error={!!modalErrors.category}
-                    helperText={modalErrors.category?.message}
+                    defaultValue={selectedProduct.stocks}
+                    {...modalRegister('stocks')}
+                    error={!!modalErrors.stocks}
+                    helperText={modalErrors.stocks?.message}
                   />
+  
+                  <FormControl fullWidth>
+                    <InputLabel id="modal-category-label">Category</InputLabel>
+                    <Select
+                      labelId="modal-category-label"
+                      id="modal-category"
+                      defaultValue={selectedProduct.category}
+                      {...modalRegister('category')}
+                      error={!!modalErrors.category}
+                    >
+                      <MenuItem value="Music">Music</MenuItem>
+                      <MenuItem value="Album">Album</MenuItem>
+                      <MenuItem value="Merchandise">Merchandise</MenuItem>
+                    </Select>
+                    {modalErrors.category && <p className="error-text">{modalErrors.category.message}</p>}
+                  </FormControl>
+  
                   <TextField
                     label="Details"
                     variant="outlined"
@@ -439,7 +454,7 @@ const AdminDashboard = () => {
         </div>
       </div>
     </ThemeProvider>
-  );
+  );  
 };
 
 export default AdminDashboard;
