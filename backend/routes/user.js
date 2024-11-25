@@ -23,28 +23,16 @@ router.get('/profile', authMiddleware, async (req, res) => {
 // Update user profile
 router.put('/update-profile', authMiddleware, upload.single('profilePicture'), async (req, res) => {
   try {
-    const { firstName, lastName, email, username, currentPassword, newPassword } = req.body;
+    const { name, mobileNumber } = req.body;
 
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Validate current password if newPassword is provided
-    if (newPassword) {
-      const isMatch = await bcrypt.compare(currentPassword, user.password);
-      if (!isMatch) {
-        return res.status(400).json({ message: 'Current password is incorrect' });
-      }
-
-      user.password = await bcrypt.hash(newPassword, 10);
-    }
-
-    // Update other fields
-    user.firstName = firstName || user.firstName;
-    user.lastName = lastName || user.lastName;
-    user.email = email || user.email;
-    user.username = username || user.username;
+    // Update fields
+    user.name = name || user.name;
+    user.mobileNumber = mobileNumber || user.mobileNumber;
 
     // Update profile picture if provided
     if (req.file) {

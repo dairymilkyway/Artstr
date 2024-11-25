@@ -3,11 +3,26 @@ const admin = require('firebase-admin');
 const User = require('../models/User');
 const Order = require('../models/Order');
 
+// Initialize Firebase Admin SDK if not already initialized
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.applicationDefault(),
+  });
+}
+
 const sendTransactionUpdateNotification = async (orderId, status) => {
   try {
     const order = await Order.findById(orderId).populate('user');
-    if (!order || !order.user || !order.user.fcmToken) {
-      console.error('Order or user not found, or FCM token missing');
+    if (!order) {
+      console.error('Order not found');
+      return;
+    }
+    if (!order.user) {
+      console.error('User not found for order');
+      return;
+    }
+    if (!order.user.fcmToken) {
+      console.error('FCM token missing for user');
       return;
     }
 
@@ -27,8 +42,8 @@ const sendTransactionUpdateNotification = async (orderId, status) => {
       token: order.user.fcmToken,
     };
 
-    await admin.messaging().send(payload);
-    console.log('Notification sent successfully');
+    const response = await admin.messaging().send(payload);
+    console.log('Notification sent successfully:', response);
   } catch (error) {
     console.error('Error sending notification:', error.message);
   }

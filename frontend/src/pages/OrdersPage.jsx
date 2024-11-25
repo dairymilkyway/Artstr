@@ -165,7 +165,7 @@ const OrdersPage = () => {
                         color="primary"
                         onClick={() => handleDelivered(order._id)}
                         sx={{ mr: 1 }}
-                        disabled={order.status === 'delivered'}
+                        disabled={order.status === 'canceled' || order.status === 'delivered'}
                       >
                         Delivered
                       </Button>
@@ -174,7 +174,7 @@ const OrdersPage = () => {
                         color="secondary"
                         onClick={() => handleCanceled(order._id)}
                         sx={{ backgroundColor: '#f44336', '&:hover': { backgroundColor: '#d32f2f' } }}
-                        disabled={order.status === 'delivered'}
+                        disabled={order.status === 'canceled' || order.status === 'delivered'}
                       >
                         Canceled
                       </Button>

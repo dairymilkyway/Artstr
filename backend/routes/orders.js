@@ -6,7 +6,8 @@ const Cart = require('../models/Cart');
 const authMiddleware = require('../middleware/authMiddleware');
 const sendTransactionEmail = require('../utils/email');
 const sendTransactionUpdateNotification = require('../utils/notifications');
-
+const sendOrderDeliveredEmail = require('../utils/orderDeliveredEmail');
+const sendOrderCanceledEmail = require('../utils/orderCanceledEmail');
 // Get orders containing a specific product for the authenticated user
 router.get('/', authMiddleware, async (req, res) => {
   try {
@@ -113,12 +114,14 @@ router.put('/:id/status', authMiddleware, async (req, res) => {
     order.status = status;
     if (status === 'delivered') {
       order.deliveredAt = new Date();
+      await sendOrderDeliveredEmail(order);
     } else if (status === 'canceled') {
       order.deliveredAt = null;
+      await sendOrderCanceledEmail(order);
     }
     await order.save();
 
-    // Send notification
+
     await sendTransactionUpdateNotification(orderId, status);
 
     res.status(200).json({ message: 'Order status updated successfully', order });

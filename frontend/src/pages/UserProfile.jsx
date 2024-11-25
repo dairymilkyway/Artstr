@@ -19,13 +19,10 @@ const getToken = () => localStorage.getItem('token');
 
 // Validation schema
 const profileValidationSchema = Yup.object().shape({
-  email: Yup.string().email('Invalid email').required('Email is required'),
+  name: Yup.string().required('Name is required'),
   mobileNumber: Yup.string()
     .matches(/^[0-9]{10}$/, 'Mobile number must be 10 digits')
     .required('Mobile number is required'),
-  password: Yup.string()
-    .min(6, 'Password must be at least 6 characters')
-    .required('Password is required'),
 });
 
 const UserProfile = () => {
@@ -42,9 +39,9 @@ const UserProfile = () => {
   } = useForm({
     resolver: yupResolver(profileValidationSchema),
     defaultValues: {
-      email: '',
+      name: '',
       mobileNumber: '',
-      password: '',
+      email: '',
     },
   });
 
@@ -55,8 +52,9 @@ const UserProfile = () => {
       });
       const user = response.data.user;
 
-      setValue('email', user.email || '');
+      setValue('name', user.name || '');
       setValue('mobileNumber', user.mobileNumber || '');
+      setValue('email', user.email || '');
       setProfilePicturePreview(user.profilePicture || '/default-profile.png');
     } catch (error) {
       toast.error('Error fetching user data');
@@ -79,7 +77,7 @@ const UserProfile = () => {
 
   const handleProfileUpdate = async (data) => {
     setIsProfileUpdating(true);
-  
+
     try {
       const formData = new FormData();
       Object.entries(data).forEach(([key, value]) => {
@@ -88,20 +86,20 @@ const UserProfile = () => {
       if (profilePicture) {
         formData.append('profilePicture', profilePicture);
       }
-  
+
       const response = await axios.put('http://localhost:5000/api/users/update-profile', formData, {
         headers: {
           Authorization: `Bearer ${getToken()}`,
           'Content-Type': 'multipart/form-data',
         },
       });
-  
+
       toast.success('Profile updated successfully!', {
         onClose: () => {
           window.location.reload(); // Refresh the page after the toast is closed
         },
       });
-  
+
       setProfilePicturePreview(response.data.user.profilePicture);
     } catch (error) {
       toast.error('Failed to update profile. Please try again.');
@@ -109,7 +107,6 @@ const UserProfile = () => {
       setIsProfileUpdating(false);
     }
   };
-  
 
   useEffect(() => {
     fetchUserData();
@@ -186,6 +183,26 @@ const UserProfile = () => {
             </Box>
 
             <Controller
+              name="name"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  fullWidth
+                  label="Name"
+                  error={!!errors.name}
+                  helperText={errors.name?.message}
+                  {...field}
+                  margin="normal"
+                  sx={{
+                    '& .MuiInputBase-root': { color: 'white' },
+                    '& .MuiFormLabel-root': { color: 'white' },
+                    '& .MuiFormHelperText-root': { color: '#d4d4d4' },
+                  }}
+                />
+              )}
+            />
+
+            <Controller
               name="email"
               control={control}
               render={({ field }) => (
@@ -196,6 +213,9 @@ const UserProfile = () => {
                   helperText={errors.email?.message}
                   {...field}
                   margin="normal"
+                  InputProps={{
+                    readOnly: true,
+                  }}
                   sx={{
                     '& .MuiInputBase-root': { color: 'white' },
                     '& .MuiFormLabel-root': { color: 'white' },
@@ -214,27 +234,6 @@ const UserProfile = () => {
                   label="Mobile Number"
                   error={!!errors.mobileNumber}
                   helperText={errors.mobileNumber?.message}
-                  {...field}
-                  margin="normal"
-                  sx={{
-                    '& .MuiInputBase-root': { color: 'white' },
-                    '& .MuiFormLabel-root': { color: 'white' },
-                    '& .MuiFormHelperText-root': { color: '#d4d4d4' },
-                  }}
-                />
-              )}
-            />
-
-            <Controller
-              name="password"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  fullWidth
-                  label="Password"
-                  type="password"
-                  error={!!errors.password}
-                  helperText={errors.password?.message}
                   {...field}
                   margin="normal"
                   sx={{

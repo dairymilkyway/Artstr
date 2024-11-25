@@ -95,7 +95,7 @@ router.post('/register', upload.single('profilePicture'), async (req, res) => {
 // // Login Route Google
 // Login Route Google
 router.post('/login', async (req, res) => {
-  const { email, password, token } = req.body; // Removed fcmToken from request body
+  const { email, password, token, fcmToken } = req.body; // Added `fcmToken` back to request body
 
   try {
     let user;
@@ -124,9 +124,20 @@ router.post('/login', async (req, res) => {
         });
         await user.save();
       }
+
+      // Update FCM token if provided
+      if (fcmToken) {
+        user.fcmToken = fcmToken;
+        await user.save();
+      }
     } else {
       // Email/password login
       console.log('Email/password login attempt with email:', email);
+      if (!email || !password) {
+        console.log('Email or password missing');
+        return res.status(400).json({ message: 'Email and password are required' });
+      }
+
       user = await User.findOne({ email });
       if (!user) {
         console.log('User not found for email:', email);
@@ -138,6 +149,12 @@ router.post('/login', async (req, res) => {
       if (!isMatch) {
         console.log('Password mismatch for email:', email);
         return res.status(400).json({ message: 'Invalid email or password' });
+      }
+
+      // Update FCM token if provided
+      if (fcmToken) {
+        user.fcmToken = fcmToken;
+        await user.save();
       }
     }
 
@@ -153,15 +170,14 @@ router.post('/login', async (req, res) => {
     // Include userId and other relevant details in the response
     res.json({
       token: jwtToken,
-      userId: user._id, // Add userId here
-      email: user.email, // Optionally include email or other user info
+      userId: user._id,
+      email: user.email,
     });
   } catch (error) {
     console.error('Error during login:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
-
 
 
 

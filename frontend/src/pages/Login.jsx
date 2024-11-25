@@ -79,7 +79,8 @@ const Login = () => {
 
       const response = await axios.post('http://localhost:5000/api/auth/login', { token, fcmToken });
       localStorage.setItem('token', response.data.token);
-
+      localStorage.setItem('userId', response.data.userId);
+      
       toast.success('Login successful! Redirecting...', {
         position: 'top-right',
         autoClose: 3000,
